@@ -327,7 +327,6 @@ func VerifyPodSuccess(p *v1.Pod) error {
 
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: p.Name, Namespace: p.Namespace}, p)
 	if err != nil {
-		return err
 		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
 		return err
 	}

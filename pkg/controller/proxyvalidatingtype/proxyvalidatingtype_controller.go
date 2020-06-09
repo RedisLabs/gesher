@@ -24,8 +24,7 @@ var log = logf.Log.WithName("controller_proxyvalidatingtype")
 func Add(mgr manager.Manager) error {
 	var err error
 
-	// set caBundle should be already created in main()
-	caBundle, err = ioutil.ReadFile(filepath.Join(common.CertDir, common.CertPem))
+	_, err = ioutil.ReadFile(filepath.Join(common.CertDir, common.CertPem))
 	if err != nil {
 		return err
 	}
