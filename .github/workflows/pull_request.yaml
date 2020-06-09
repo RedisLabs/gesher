@@ -1,0 +1,43 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test_and_lint:
+    name: Unit Test and Lint
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.14.x
+
+    - name: Go Unit Test
+      run: go test ./pkg/...
+
+    - name: Lint Go code
+      uses: golangci/golangci-lint-action@v1
+      with:
+        version: v1.27
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Docker build
+      uses: docker/build-push-action@v1
+      with:
+        repository: redislabs/gesher
+        tags: latest
+        push: false
+
