@@ -1,0 +1,17 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Lint code
+      uses: golangci/golangci-lint-action@v1
+      with:
+        version: v1.27
