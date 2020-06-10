@@ -5,14 +5,18 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
+	"github.com/redislabs/gesher/pkg/admission-proxy"
 	"github.com/redislabs/gesher/pkg/apis"
 	"github.com/redislabs/gesher/pkg/controller"
 	"github.com/redislabs/gesher/version"
@@ -131,6 +135,8 @@ func main() {
 	// Add the Metrics Service
 	addMetrics(ctx, cfg)
 
+	setupWebhook(mgr.GetWebhookServer())
+
 	log.Info("Starting the Cmd.")
 
 	// Start the Cmd
@@ -208,4 +214,31 @@ func serveCRMetrics(cfg *rest.Config, operatorNs string) error {
 		return err
 	}
 	return nil
+}
+
+// Simple health/liveness endpoint
+type Healthz struct {}
+
+func (h Healthz) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	_, _ = w.Write([]byte("ok"))
+}
+
+func setupWebhook(server *webhook.Server) {
+	var err error
+
+	certDir := os.Getenv("CERT_DIR")
+	if certDir == "" {
+		certDir, err = os.Getwd()
+		if err != nil {
+			certDir = "."
+		}
+	}
+	log.Info(fmt.Sprintf("certDir = %v", certDir))
+	server.CertDir  = certDir
+	server.CertName = "cert.pem"
+	server.KeyName  = "key.pem"
+	server.Port = 8443
+	// register objects that serve the 2 primary endpoints
+	server.Register("/healthz", &Healthz{})
+	server.Register("/proxy", &admission_proxy.Handler{})
 }
