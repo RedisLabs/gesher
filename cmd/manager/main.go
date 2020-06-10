@@ -217,7 +217,7 @@ func serveCRMetrics(cfg *rest.Config, operatorNs string) error {
 }
 
 // Simple health/liveness endpoint
-type Healthz struct {}
+type Healthz struct{}
 
 func (h Healthz) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("ok"))
@@ -234,9 +234,9 @@ func setupWebhook(server *webhook.Server) {
 		}
 	}
 	log.Info(fmt.Sprintf("certDir = %v", certDir))
-	server.CertDir  = certDir
+	server.CertDir = certDir
 	server.CertName = "cert.pem"
-	server.KeyName  = "key.pem"
+	server.KeyName = "key.pem"
 	server.Port = 8443
 	// register objects that serve the 2 primary endpoints
 	server.Register("/healthz", &Healthz{})

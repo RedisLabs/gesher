@@ -14,7 +14,7 @@ import (
 
 var log = logf.Log.WithName("handler")
 
-type Handler struct {}
+type Handler struct{}
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var body []byte

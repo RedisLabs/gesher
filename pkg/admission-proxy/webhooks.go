@@ -68,7 +68,7 @@ func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1b
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				RootCAs:      caCertPool,
+				RootCAs: caCertPool,
 			},
 		},
 	}

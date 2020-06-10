@@ -20,4 +20,3 @@ func approved() *v1beta1.AdmissionResponse {
 		Allowed: true,
 	}
 }
-
