@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,9 +41,16 @@ func findWebhooks(request *v1beta1.AdmissionRequest) []Webhook {
 	if webhook[path] = os.Getenv("ADM_SERVICE_ENDPOINT"); webhook[path] == "" {
 		panic("failed to read env variable ADM_SERVICE_ENDPOINT")
 	}
-	if webhook[caBundle] = os.Getenv("ADM_SERVICE_CABUNDLE"); webhook[caBundle] == "" {
+	encoded := os.Getenv("ADM_SERVICE_CABUNDLE")
+	if encoded == "" {
 		panic("failed to read env variable ADM_SERVICE_CABUNDLE")
 	}
+	data, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		panic("failed to base64 decode cabundle")
+	}
+	webhook[caBundle] = string(data)
+
 	if webhook[port] = os.Getenv("ADM_SERVICE_PORT"); webhook[port] == "" {
 		panic("failed to read env variable ADM_SERVICE_CABUNDLE")
 	}
@@ -80,6 +88,9 @@ func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1b
 	}
 
 	resp, err := client.Do(req)
+	if err != nil {
+		defer resp.Body.Close()
+	}
 	failurePolicy := admv1beta1.Fail
 	err = toFailure(resp, err, failurePolicy)
 
@@ -91,44 +102,59 @@ func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1b
 }
 
 func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.FailurePolicyType) error {
+	log.Info(fmt.Sprintf("toFailure: httpErr = %v", httpErr))
 	if httpErr != nil {
 		if failurePolicy == admv1beta1.Fail {
+			log.Info("returning httpErr as failurePolicy = Fail")
 			return httpErr
 		} else {
+			log.Info("httpErr, but returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
 
 	if resp.Body == nil {
 		if failurePolicy == admv1beta1.Fail {
+			log.Info("body is nil, returning error as failurePolicy = Fail")
 			return errors.New("empty response")
 		} else {
+			log.Info("body is nil, returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
-	if err == nil {
+	if err != nil {
 		if failurePolicy == admv1beta1.Fail {
+			log.Info("failed to read body, returning error as failurePolicy = Fail")
 			return err
 		} else {
+			log.Info("failed to read body, returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
+
+	log.Info(fmt.Sprintf("toFailure: resp.Body = %v", string(data)))
 
 	var responseAdmissionReview v1beta1.AdmissionReview
 	err = json.Unmarshal(data, &responseAdmissionReview)
 	if err != nil {
 		if failurePolicy == admv1beta1.Fail {
+			log.Info("failed to json unmarshall, returning error as failurePolicy = Fail")
 			return err
 		} else {
+			log.Info("failed to json unmarshall, returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
 
+	log.Info(fmt.Sprintf("toFailure: unmarshalled response = %+v\n", responseAdmissionReview))
+
 	if !responseAdmissionReview.Response.Allowed {
 		return errors.New(responseAdmissionReview.Response.Result.Message)
 	}
+
+	log.Info("toFailure: passed all test")
 
 	return nil
 }
