@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 
 	"k8s.io/api/admission/v1beta1"
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -61,12 +62,40 @@ func findWebhooks(request *v1beta1.AdmissionRequest) []Webhook {
 	return []Webhook{webhook}
 }
 
+// code is inspired by k8s.io/apiserver/pkg/admission/plugin/webhook/validating/dispatcher.go
 func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
 	if len(webhooks) == 0 {
 		return approved()
 	}
 
-	webhook := webhooks[0]
+	wg := &sync.WaitGroup{}
+	errCh := make(chan error, len(webhooks))
+	wg.Add(len(webhooks))
+	for _, webhook := range webhooks {
+		go dumbWebhook(webhook, wg, r, body, errCh)
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	var errs []error
+	for e := range errCh {
+		errs = append(errs, e)
+	}
+	if len(errs) == 0 {
+		return approved()
+	}
+
+	if len(errs) > 1 {
+		// TODO: merge status errors; until then, just return the first one.
+		log.V(3).Info("TODO: merge status errors; until then, just return the first one.")
+	}
+
+	return errToAdmissionResponse(errs[0])
+}
+
+func dumbWebhook(webhook Webhook, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
+	defer wg.Done()
 
 	url := fmt.Sprintf("https://%v.%v:%v%v", webhook[serviceName], webhook[namespace], webhook[port], webhook[path])
 
@@ -88,37 +117,33 @@ func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1b
 	}
 
 	resp, err := client.Do(req)
-	if err != nil {
+	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
 	}
 	failurePolicy := admv1beta1.Fail
 	err = toFailure(resp, err, failurePolicy)
 
-	if err != nil {
-		return errToAdmissionResponse(err)
-	}
-
-	return approved()
+	errCh <- err
 }
 
 func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.FailurePolicyType) error {
-	log.Info(fmt.Sprintf("toFailure: httpErr = %v", httpErr))
+	log.V(2).Info(fmt.Sprintf("toFailure: httpErr = %v", httpErr))
 	if httpErr != nil {
 		if failurePolicy == admv1beta1.Fail {
-			log.Info("returning httpErr as failurePolicy = Fail")
+			log.V(1).Info("returning httpErr as failurePolicy = Fail")
 			return httpErr
 		} else {
-			log.Info("httpErr, but returning nil as failurePolicy = Ignore")
+			log.V(1).Info("httpErr, but returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
 
 	if resp.Body == nil {
 		if failurePolicy == admv1beta1.Fail {
-			log.Info("body is nil, returning error as failurePolicy = Fail")
+			log.V(1).Info("body is nil, returning error as failurePolicy = Fail")
 			return errors.New("empty response")
 		} else {
-			log.Info("body is nil, returning nil as failurePolicy = Ignore")
+			log.V(1).Info("body is nil, returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
@@ -126,35 +151,35 @@ func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.Fail
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		if failurePolicy == admv1beta1.Fail {
-			log.Info("failed to read body, returning error as failurePolicy = Fail")
+			log.V(1).Info("failed to read body, returning error as failurePolicy = Fail")
 			return err
 		} else {
-			log.Info("failed to read body, returning nil as failurePolicy = Ignore")
+			log.V(1).Info("failed to read body, returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
 
-	log.Info(fmt.Sprintf("toFailure: resp.Body = %v", string(data)))
+	log.V(2).Info(fmt.Sprintf("toFailure: resp.Body = %v", string(data)))
 
 	var responseAdmissionReview v1beta1.AdmissionReview
 	err = json.Unmarshal(data, &responseAdmissionReview)
 	if err != nil {
 		if failurePolicy == admv1beta1.Fail {
-			log.Info("failed to json unmarshall, returning error as failurePolicy = Fail")
+			log.V(1).Info("failed to json unmarshall, returning error as failurePolicy = Fail")
 			return err
 		} else {
-			log.Info("failed to json unmarshall, returning nil as failurePolicy = Ignore")
+			log.V(1).Info("failed to json unmarshall, returning nil as failurePolicy = Ignore")
 			return nil
 		}
 	}
 
-	log.Info(fmt.Sprintf("toFailure: unmarshalled response = %+v\n", responseAdmissionReview))
+	log.V(2).Info(fmt.Sprintf("toFailure: unmarshalled response = %+v\n", responseAdmissionReview))
 
 	if !responseAdmissionReview.Response.Allowed {
 		return errors.New(responseAdmissionReview.Response.Result.Message)
 	}
 
-	log.Info("toFailure: passed all test")
+	log.V(2).Info("toFailure: passed all test")
 
 	return nil
 }
