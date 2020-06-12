@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -121,17 +120,17 @@ func dumbWebhook(webhook Webhook, wg *sync.WaitGroup, r *http.Request, body *byt
 		defer resp.Body.Close()
 	}
 	failurePolicy := admv1beta1.Fail
-	err = toFailure(resp, err, failurePolicy)
+	err = toFailure("webhook", resp, err, failurePolicy)
 
 	errCh <- err
 }
 
-func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.FailurePolicyType) error {
-	log.V(2).Info(fmt.Sprintf("toFailure: httpErr = %v", httpErr))
+func toFailure(name string, resp *http.Response, httpErr error, failurePolicy admv1beta1.FailurePolicyType) error {
+	log.V(2).Info(fmt.Sprintf("toFailure: %v: httpErr = %v", name, httpErr))
 	if httpErr != nil {
 		if failurePolicy == admv1beta1.Fail {
 			log.V(1).Info("returning httpErr as failurePolicy = Fail")
-			return httpErr
+			return fmt.Errorf("proxied webhook %v failed: %v", name, httpErr)
 		} else {
 			log.V(1).Info("httpErr, but returning nil as failurePolicy = Ignore")
 			return nil
@@ -141,7 +140,7 @@ func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.Fail
 	if resp.Body == nil {
 		if failurePolicy == admv1beta1.Fail {
 			log.V(1).Info("body is nil, returning error as failurePolicy = Fail")
-			return errors.New("empty response")
+			return fmt.Errorf("proxied webhook %v returned empty result", name)
 		} else {
 			log.V(1).Info("body is nil, returning nil as failurePolicy = Ignore")
 			return nil
@@ -152,7 +151,7 @@ func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.Fail
 	if err != nil {
 		if failurePolicy == admv1beta1.Fail {
 			log.V(1).Info("failed to read body, returning error as failurePolicy = Fail")
-			return err
+			return fmt.Errorf("proxied webhook %v: failed to read response body", name, err)
 		} else {
 			log.V(1).Info("failed to read body, returning nil as failurePolicy = Ignore")
 			return nil
@@ -165,8 +164,7 @@ func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.Fail
 	err = json.Unmarshal(data, &responseAdmissionReview)
 	if err != nil {
 		if failurePolicy == admv1beta1.Fail {
-			log.V(1).Info("failed to json unmarshall, returning error as failurePolicy = Fail")
-			return err
+			return fmt.Errorf("proxied webhook %v: failed to unmarshall json", name, err)
 		} else {
 			log.V(1).Info("failed to json unmarshall, returning nil as failurePolicy = Ignore")
 			return nil
@@ -176,7 +174,7 @@ func toFailure(resp *http.Response, httpErr error, failurePolicy admv1beta1.Fail
 	log.V(2).Info(fmt.Sprintf("toFailure: unmarshalled response = %+v\n", responseAdmissionReview))
 
 	if !responseAdmissionReview.Response.Allowed {
-		return errors.New(responseAdmissionReview.Response.Result.Message)
+		return fmt.Errorf("proxied webhook %v denied the request: %v", name, err)
 	}
 
 	log.V(2).Info("toFailure: passed all test")
