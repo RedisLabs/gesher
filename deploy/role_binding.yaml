@@ -1,11 +1,12 @@
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: gesher
 subjects:
 - kind: ServiceAccount
   name: gesher
+  namespace: default
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: gesher
   apiGroup: rbac.authorization.k8s.io

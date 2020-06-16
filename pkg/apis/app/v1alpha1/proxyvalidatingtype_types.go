@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-    admissionv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,13 +22,15 @@ type ProxyValidatingTypeStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProxyValidatingType is the Schema for the proxyvalidatingtypes API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=proxyvalidatingtypes,scope=Namespaced
+// +kubebuilder:resource:path=proxyvalidatingtypes,scope=Cluster
 type ProxyValidatingType struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

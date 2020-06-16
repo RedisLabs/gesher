@@ -10,8 +10,6 @@ import (
 	"runtime"
 	"strings"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
@@ -135,7 +133,7 @@ func main() {
 	// Add the Metrics Service
 	addMetrics(ctx, cfg)
 
-	setupWebhook(mgr.GetWebhookServer())
+	setupWebhook(mgr)
 
 	log.Info("Starting the Cmd.")
 
@@ -223,22 +221,29 @@ func (h Healthz) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
-func setupWebhook(server *webhook.Server) {
+func setupWebhook(mgr manager.Manager) {
 	var err error
 
-	certDir := os.Getenv("CERT_DIR")
-	if certDir == "" {
-		certDir, err = os.Getwd()
-		if err != nil {
-			certDir = "."
+	// TODO: hack to not annoy linter to enable code to remain
+	enableWebhook := os.Getenv("ENABLE_WEBHOOK")
+	if enableWebhook == "yes" {
+		server := mgr.GetWebhookServer()
+		certDir := os.Getenv("CERT_DIR")
+		if certDir == "" {
+			certDir, err = os.Getwd()
+			if err != nil {
+				certDir = "."
+			}
 		}
+
+		log.Info(fmt.Sprintf("certDir = %v", certDir))
+		server.CertDir = certDir
+		server.CertName = "cert.pem"
+		server.KeyName = "key.pem"
+
+		server.Port = 8443
+		// register objects that serve the 2 primary endpoints
+		server.Register("/healthz", &Healthz{})
+		server.Register("/proxy", &admission_proxy.Handler{})
 	}
-	log.Info(fmt.Sprintf("certDir = %v", certDir))
-	server.CertDir = certDir
-	server.CertName = "cert.pem"
-	server.KeyName = "key.pem"
-	server.Port = 8443
-	// register objects that serve the 2 primary endpoints
-	server.Register("/healthz", &Healthz{})
-	server.Register("/proxy", &admission_proxy.Handler{})
 }
