@@ -1,0 +1,18 @@
+FROM  golang:1.14-alpine
+ENV GOPATH=/go
+WORKDIR /go/src/github.com/RedisLabs/gesher
+RUN apk add --update \
+        bash \
+        zip \
+        ca-certificates \
+        make \
+        build-base \
+        curl \
+        git \
+	python3
+RUN curl -sSL https://sdk.cloud.google.com | bash
+RUN mkdir -p /go/src/github.com/RedisLabs/gesher
+RUN go get -u github.com/onsi/ginkgo/ginkgo
+COPY / ./
+RUN go mod download
+RUN go build ./cmd/manager
