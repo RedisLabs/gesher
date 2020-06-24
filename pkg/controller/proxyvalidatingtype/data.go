@@ -13,6 +13,7 @@ import (
 
 var (
 	proxyTypeData = &ProxyTypeData{}
+	caBundle      []byte
 )
 
 type typeInstanceMap map[types.UID]bool

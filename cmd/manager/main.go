@@ -5,8 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/redislabs/gesher/cmd/manager/flags"
+	"github.com/redislabs/gesher/pkg/common"
+	"github.com/redislabs/gesher/pkg/tls_manager"
+	"io/ioutil"
+	"k8s.io/client-go/kubernetes"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -81,6 +87,13 @@ func main() {
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	// Setup TLS
+	err = setupTLS(cfg)
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)
@@ -222,28 +235,44 @@ func (h Healthz) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 }
 
 func setupWebhook(mgr manager.Manager) {
-	var err error
-
 	// TODO: hack to not annoy linter to enable code to remain
-	enableWebhook := os.Getenv("ENABLE_WEBHOOK")
-	if enableWebhook == "yes" {
-		server := mgr.GetWebhookServer()
-		certDir := os.Getenv("CERT_DIR")
-		if certDir == "" {
-			certDir, err = os.Getwd()
-			if err != nil {
-				certDir = "."
-			}
-		}
+	//	enableWebhook := os.Getenv("ENABLE_WEBHOOK")
+	//	if enableWebhook == "yes" {
+	server := mgr.GetWebhookServer()
 
-		log.Info(fmt.Sprintf("certDir = %v", certDir))
-		server.CertDir = certDir
-		server.CertName = "cert.pem"
-		server.KeyName = "key.pem"
+	server.CertDir = common.CertDir
+	server.CertName = common.CertPem
+	server.KeyName = common.PrivPem
+	server.Port = 8443
 
-		server.Port = 8443
-		// register objects that serve the 2 primary endpoints
-		server.Register("/healthz", &Healthz{})
-		server.Register("/proxy", &admission_proxy.Handler{})
+	// register objects that serve the 2 primary endpoints
+	server.Register("/healthz", &Healthz{})
+	server.Register(common.ProxyPath, &admission_proxy.Handler{})
+	//	}
+}
+
+func setupTLS(cfg *rest.Config) error {
+	client := kubernetes.NewForConfigOrDie(cfg)
+
+	priv, cert, err := tls_manager.GenerateTLS(client, *flags.Namespace, *flags.Service, *flags.TlsSecret)
+	if err != nil {
+		return err
 	}
+
+	err = os.MkdirAll(common.CertDir, 0700)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(common.CertDir, common.PrivPem), priv, 0600)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(common.CertDir, common.CertPem), cert, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
