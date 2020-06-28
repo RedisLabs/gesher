@@ -1,7 +1,10 @@
 package proxyvalidatingtype
 
 import (
+	"github.com/redislabs/gesher/pkg/common"
+	"io/ioutil"
 	"k8s.io/api/admissionregistration/v1beta1"
+	"path/filepath"
 
 	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +22,14 @@ var log = logf.Log.WithName("controller_proxyvalidatingtype")
 // Add creates a new ProxyValidatingType Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
+	var err error
+
+	// set caBundle should be already created in main()
+	caBundle, err = ioutil.ReadFile(filepath.Join(common.CertDir, common.CertPem))
+	if err != nil {
+		return err
+	}
+
 	return add(mgr, newReconciler(mgr))
 }
 
