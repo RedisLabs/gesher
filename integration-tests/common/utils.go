@@ -146,25 +146,27 @@ func LoadService() *v1.Service {
 	return s
 }
 
-func LoadOperator(deploy **appsv1.Deployment, desc string) {
+func LoadOperator(desc string) *appsv1.Deployment {
 	By(desc)
 
-	*deploy = &appsv1.Deployment{}
+	deploy := &appsv1.Deployment{}
 
 	data, err := ioutil.ReadFile("../../deploy/operator.yaml")
 	Expect(err).To(BeNil())
 	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(deploy)).To(Succeed())
-	(*deploy).Namespace = Namespace
-	Expect(kubeClient.Create(context.TODO(), *deploy)).To(Succeed())
+	deploy.Namespace = Namespace
+	Expect(kubeClient.Create(context.TODO(), deploy)).To(Succeed())
 
-	Eventually(func() error { return WaitForDeployment(*deploy) }, 60, 5).Should(Succeed())
+	Eventually(func() error { return WaitForDeployment(deploy) }, 60, 5).Should(Succeed())
+
+	return deploy
 }
 
 func WaitForDeployment(deploy *appsv1.Deployment) error {
 	d, err := cl.AppsV1().Deployments(deploy.Namespace).Get(context.TODO(), deploy.Name, metav1.GetOptions{})
 
 	// commented out as wasn't populating status, but would prefer to use if can be made to work
-	//err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: deploy.Name, Namespace: deploy.Namespace}, d)
+	//err := kubeClient.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, d)
 	if err == nil {
 		if d.Status.UpdatedReplicas == *d.Spec.Replicas && d.Status.ReadyReplicas == *d.Spec.Replicas {
 			return nil

@@ -25,7 +25,7 @@ import (
 type TLSManager interface {
 	HasKey() bool
 	CreateKey() error
-	GetKey() ([]byte, []byte, error)
+	GetKey() (privKey []byte, csr []byte, err error)
 	ConfigTLS([]byte, []byte) *tls.Config
 }
 

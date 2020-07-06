@@ -2,11 +2,13 @@ package tls_manager
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
 	"net"
 	"os"
+
+	"github.com/pkg/errors"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 )
 
 func GenerateTLS(client kubernetes.Interface, namespace, serviceName, secretName string) ([]byte, []byte, error) {
