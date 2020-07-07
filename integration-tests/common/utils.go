@@ -163,87 +163,93 @@ func LoadOperator(desc string) *appsv1.Deployment {
 }
 
 func WaitForDeployment(deploy *appsv1.Deployment) error {
+	fmt.Fprintf(GinkgoWriter, "Verifying that new deployment is ready: ")
 	d, err := cl.AppsV1().Deployments(deploy.Namespace).Get(context.TODO(), deploy.Name, metav1.GetOptions{})
 
 	// commented out as wasn't populating status, but would prefer to use if can be made to work
 	//err := kubeClient.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, d)
 	if err == nil {
 		if d.Status.UpdatedReplicas == *d.Spec.Replicas && d.Status.ReadyReplicas == *d.Spec.Replicas {
+			fmt.Fprintf(GinkgoWriter, "Ready\n")
 			return nil
 		}
 	} else if !apierrors.IsNotFound(err) {
+		fmt.Fprintf(GinkgoWriter, "Error: %v\n", err)
 		return err
 	}
 
-	return fmt.Errorf("%v not available yet: %+v", deploy.Name, deploy)
+	err = fmt.Errorf("%v not available yet: %+v", deploy.Name, deploy.Status)
+	fmt.Fprintf(GinkgoWriter, "%v\n", err)
+	return err
 }
 
 func VerifyEmpty() error {
-	fmt.Fprintf(GinkgoWriter, "Verifying that Webhook %v is Empty\n", webhookResourceName)
+	fmt.Fprintf(GinkgoWriter, "Verifying that Webhook %v is Empty: ", webhookResourceName)
 
 	item := &v1beta1.ValidatingWebhookConfiguration{}
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: webhookResourceName}, item)
 	if err != nil {
+		fmt.Fprintf(GinkgoWriter, "%v\n", err)
 		return err
 	}
 
 	switch len(item.Webhooks) {
 	case 0:
-		fmt.Fprintf(GinkgoWriter, "\tSuccess!\n")
+		fmt.Fprintf(GinkgoWriter, "Success!\n")
 		return nil
 	case 1:
 		if len(item.Webhooks[0].Rules) == 0 {
-			fmt.Fprintf(GinkgoWriter, "\tSuccess!\n")
+			fmt.Fprintf(GinkgoWriter, "Success!\n")
 			return nil
 		}
 		err := errors.New("expected no Rules")
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	default:
 		err := errors.New("more than one webhook specified")
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 }
 
 func VerifyApplied(pt *v1alpha1.ProxyValidatingType) error {
-	fmt.Fprintf(GinkgoWriter, "Verifying that PVR %v was applied by operator\n", pt.Name)
+	fmt.Fprintf(GinkgoWriter, "Verifying that PVR %v was applied by operator: ", pt.Name)
 
 	prevGen := pt.Status.ObservedGeneration
 	name := pt.Name
 
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: name}, pt)
 	if err != nil {
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 	if prevGen == pt.Status.ObservedGeneration || pt.Generation != pt.Status.ObservedGeneration {
 		err := errors.New("operator hasn't updated generation in status yet")
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
-	fmt.Fprintf(GinkgoWriter, "\tSuccess!\n")
+	fmt.Fprintf(GinkgoWriter, "Success!\n")
 	return nil
 }
 
 func VerifyDeleted(pt *v1alpha1.ProxyValidatingType) error {
-	fmt.Fprintf(GinkgoWriter, "Verifying that PVR %v was deleted\n", pt.Name)
+	fmt.Fprintf(GinkgoWriter, "Verifying that PVR %v was deleted: ", pt.Name)
 
 	name := pt.Name
 
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: name}, pt)
 	if err == nil {
 		err := fmt.Errorf("%v not deleted yet", pt.Name)
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 	if !apierrors.IsNotFound(err) {
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
-	fmt.Fprintf(GinkgoWriter, "\tSuccess!\n")
+	fmt.Fprintf(GinkgoWriter, "Success!\n")
 	return nil
 }
 
@@ -325,53 +331,53 @@ func OpArrayContainsValues(operations []v1beta1.OperationType, op v1beta1.Operat
 }
 
 func VerifyPodSuccess(p *v1.Pod) error {
-	fmt.Fprintf(GinkgoWriter, "Verifying Pod %v Completes Succesfully\n", p.Name)
+	fmt.Fprintf(GinkgoWriter, "Verifying Pod %v Completes Succesfully: ", p.Name)
 
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: p.Name, Namespace: p.Namespace}, p)
 	if err != nil {
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
 	if p.Status.Phase == v1.PodRunning || p.Status.Phase == v1.PodPending {
 		err := errors.New("Pod Is Still Running")
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
 	if p.Status.Phase != v1.PodSucceeded || p.Status.ContainerStatuses[0].State.Terminated.ExitCode != 0 {
 		err := fmt.Errorf("%v failed", p.Name)
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
-	fmt.Fprintf(GinkgoWriter, "\tSuccess!\n")
+	fmt.Fprintf(GinkgoWriter, "Success!\n")
 	return nil
 }
 
 func VerifyEndpoint(e, namespace string) error {
-	fmt.Fprintf(GinkgoWriter, "Verifying Endpoint\n")
+	fmt.Fprintf(GinkgoWriter, "Verifying Endpoint: ")
 
 	var endpoint v1.Endpoints
 
 	err := kubeClient.Get(context.TODO(), types.NamespacedName{Name: e, Namespace: namespace}, &endpoint)
 	if err != nil {
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
 	if len(endpoint.Subsets) == 0 {
 		err := errors.New("endpoint not filled in yet")
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
 	if len(endpoint.Subsets[0].Addresses) == 0 {
 		err := errors.New("endpoint addreses not filled in yet")
-		fmt.Fprintf(GinkgoWriter, "\tFailed: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
 
-	fmt.Fprintf(GinkgoWriter, "\tSuccess!\n")
+	fmt.Fprintf(GinkgoWriter, "Success!\n")
 	return nil
 }
