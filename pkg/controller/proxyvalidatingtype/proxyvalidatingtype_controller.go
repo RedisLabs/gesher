@@ -24,7 +24,7 @@ var log = logf.Log.WithName("controller_proxyvalidatingtype")
 func Add(mgr manager.Manager) error {
 	var err error
 
-	_, err = ioutil.ReadFile(filepath.Join(common.CertDir, common.CertPem))
+	caBundle, err = ioutil.ReadFile(filepath.Join(common.CertDir, common.CertPem))
 	if err != nil {
 		return err
 	}

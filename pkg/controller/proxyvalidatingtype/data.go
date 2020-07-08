@@ -3,6 +3,7 @@ package proxyvalidatingtype
 import (
 	"bytes"
 	"encoding/gob"
+	"github.com/redislabs/gesher/cmd/manager/flags"
 
 	"k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +14,7 @@ import (
 
 var (
 	proxyTypeData = &ProxyTypeData{}
+	caBundle      []byte
 )
 
 type typeInstanceMap map[types.UID]bool
@@ -237,10 +239,10 @@ func selfConfig() v1beta1.WebhookClientConfig {
 
 	return v1beta1.WebhookClientConfig{
 		Service: &v1beta1.ServiceReference{
-			Namespace: "default",
-			Name:      "test",
+			Namespace: *flags.Namespace,
+			Name:      *flags.Service,
 			Path:      &path,
 		},
-		CABundle: nil,
+		CABundle: caBundle,
 	}
 }
