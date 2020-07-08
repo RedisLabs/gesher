@@ -42,7 +42,7 @@ func admit(review v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
 
 		klog.Infof("obj = %+v\n", obj)
 
-		val, _ := obj.Labels[AdmissionKey]
+		val := obj.Labels[AdmissionKey]
 		if val != AdmissionAllow {
 			return GenericError(fmt.Errorf("%v label not set to allow this resource", AdmissionKey))
 		}

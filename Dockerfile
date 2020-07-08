@@ -3,7 +3,6 @@ ENV GOPATH=/go
 WORKDIR /go/src/github.com/RedisLabs/gesher
 RUN mkdir -p /go/src/github.com/RedisLabs/gesher
 COPY / ./
-RUN go mod download
 RUN CGO_ENABLED=0 go build -tags netgo -ldflags '-w -extldflags "-static"' ./cmd/manager
 
 FROM scratch
