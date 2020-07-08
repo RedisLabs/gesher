@@ -56,7 +56,7 @@ var _ = Describe("HttpsServer", func() {
 	It("TLS Testing", func() {
 		var s1, s2 v1.Secret
 
-		common.LoadOperator(&deploy, "Read and Load Operator with Secret Creation")
+		deploy = common.LoadOperator("Read and Load Operator with Secret Creation")
 
 		By("Verify that the secret can be read and its keys")
 
@@ -72,7 +72,7 @@ var _ = Describe("HttpsServer", func() {
 		Expect(kubeClient.Delete(context.TODO(), deploy)).To(Succeed())
 		deploy = nil
 
-		common.LoadOperator(&deploy, "Redeploy Operator to Reuse Existing Secret")
+		deploy = common.LoadOperator("Redeploy Operator to Reuse Existing Secret")
 
 		By("Get and Compare Secret")
 		Expect(kubeClient.Get(context.TODO(), types.NamespacedName{Name: flags.DefaultTlsSecret, Namespace: common.Namespace}, &s2)).To(Succeed())

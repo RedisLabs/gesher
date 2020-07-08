@@ -46,7 +46,7 @@ var _ = BeforeSuite(func() {
 	sa = common.LoadServiceAccount()
 	role = common.LoadClusterRole()
 	roleBinding = common.LoadClusterRoleBinding()
-	common.LoadOperator(&deploy, "Read and Load Operator")
+	deploy = common.LoadOperator("Read and Load Operator")
 
 	var s corev1.Secret
 	Expect(kubeClient.Get(context.TODO(), types.NamespacedName{Name: flags.DefaultTlsSecret, Namespace: common.Namespace}, &s)).To(Succeed())
