@@ -25,24 +25,28 @@ func observe(client client.Client, request reconcile.Request, logger logr.Logger
 	}
 
 	// Fetch the ProxyValidatingType instance
-	err := client.Get(context.TODO(), request.NamespacedName, state.customResource)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("didn't find resource")
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			return nil, nil
-		}
+	if request.Name != "" {
+		err := client.Get(context.TODO(), request.NamespacedName, state.customResource)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				logger.Info("didn't find resource")
+				// Request object not found, could have been deleted after reconcile request.
+				// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+				// Return and don't requeue
+				return nil, nil
+			}
 
-		// Error reading the object
-		logger.Error(err, "resource retrieval failed")
-		return nil, err
+			// Error reading the object
+			logger.Error(err, "resource retrieval failed")
+			return nil, err
+		}
+	} else {
+		state.customResource = nil
 	}
 
 	// Fetch the managed ValidatingWebhookConfiguration instance
 	// code is ugly to make sure we handle the instance being deleted out from under us
-	err = client.Get(context.TODO(), types.NamespacedName{Name: ProxyWebhookName}, state.clusterWebhook)
+	err := client.Get(context.TODO(), types.NamespacedName{Name: ProxyWebhookName}, state.clusterWebhook)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			// Error reading the object

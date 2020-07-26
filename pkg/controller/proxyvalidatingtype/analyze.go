@@ -20,16 +20,19 @@ type analyzedState struct {
 func analyze(observed *observedState, logger logr.Logger) (*analyzedState, error) {
 	state := &analyzedState{
 		customResource: observed.customResource,
+		newProxyTypeData: proxyTypeData,
 	}
 
-	switch observed.customResource.DeletionTimestamp.IsZero() {
-	case true:
-		logger.Info("DeletionTimeStamp is zero")
-		state.newProxyTypeData = proxyTypeData.Update(observed.customResource)
-	case false:
-		logger.Info("DeletionTimeStamp is not zero, deleting")
-		state.newProxyTypeData = proxyTypeData.Delete(observed.customResource)
-		state.delete = true
+	if state.customResource != nil {
+		switch observed.customResource.DeletionTimestamp.IsZero() {
+		case true:
+			logger.Info("DeletionTimeStamp is zero")
+			state.newProxyTypeData = proxyTypeData.Update(observed.customResource)
+		case false:
+			logger.Info("DeletionTimeStamp is not zero, deleting")
+			state.newProxyTypeData = proxyTypeData.Delete(observed.customResource)
+			state.delete = true
+		}
 	}
 
 	webhook := state.newProxyTypeData.GenerateGlobalWebhook()
@@ -40,7 +43,7 @@ func analyze(observed *observedState, logger logr.Logger) (*analyzedState, error
 		state.webhook = observed.clusterWebhook
 		state.update = true
 
-		if observed.clusterWebhook == nil {
+		if state.webhook == nil {
 			logger.Info("need to create webhook as it doesn't exist")
 			state.webhook = webhook
 			state.create = true
