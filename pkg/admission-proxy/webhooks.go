@@ -5,65 +5,29 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"strconv"
 	"sync"
+	"time"
 
 	"k8s.io/api/admission/v1beta1"
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+
+	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingproxy"
+
 )
 
-// temporary dumb webhook handler
-type Webhook map[string]string
+func findWebhooks(request *v1beta1.AdmissionRequest) []namespacedvalidatingproxy.WebhookConfig {
+	op := admv1beta1.OperationType(request.Operation)
 
-const (
-	serviceName = "service-name"
-	namespace   = "namespace"
-	port        = "port"
-	path        = "path"
-	caBundle    = "ca-bundle"
-)
-
-func findWebhooks(request *v1beta1.AdmissionRequest) []Webhook {
-	webhook := make(Webhook)
-
-	if webhook[serviceName] = os.Getenv("ADM_SERVICE_NAME"); webhook[serviceName] == "" {
-		panic("failed to read env variable ADM_SERVICE_NAME")
-	}
-	if webhook[namespace] = os.Getenv("ADM_SERVICE_NAMESPACE"); webhook[namespace] == "" {
-		panic("failed to read env variable ADM_SERVICE_NAMESPACE")
-	}
-	if webhook[path] = os.Getenv("ADM_SERVICE_ENDPOINT"); webhook[path] == "" {
-		panic("failed to read env variable ADM_SERVICE_ENDPOINT")
-	}
-	encoded := os.Getenv("ADM_SERVICE_CABUNDLE")
-	if encoded == "" {
-		panic("failed to read env variable ADM_SERVICE_CABUNDLE")
-	}
-	data, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		panic("failed to base64 decode cabundle")
-	}
-	webhook[caBundle] = string(data)
-
-	if webhook[port] = os.Getenv("ADM_SERVICE_PORT"); webhook[port] == "" {
-		panic("failed to read env variable ADM_SERVICE_PORT")
-	}
-	if _, err := strconv.Atoi(webhook[port]); err != nil {
-		panic(fmt.Errorf("failed to convert port to an int: %v", err))
-	}
-
-	return []Webhook{webhook}
+	return namespacedvalidatingproxy.EndpointData.Get(request.Namespace, request.RequestKind, op)
 }
 
 // code is inspired by k8s.io/apiserver/pkg/admission/plugin/webhook/validating/dispatcher.go
-func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
+func checkWebhooks(webhooks []namespacedvalidatingproxy.WebhookConfig, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
 	if len(webhooks) == 0 {
 		return approved()
 	}
@@ -96,21 +60,25 @@ func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1b
 	return errToAdmissionResponse(errs[0])
 }
 
-func doWebhook(webhook Webhook, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
+func doWebhook(webhook namespacedvalidatingproxy.WebhookConfig, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
 	defer wg.Done()
 
-	url := fmt.Sprintf("https://%v.%v:%v%v", webhook[serviceName], webhook[namespace], webhook[port], webhook[path])
+	service := webhook.ClientConfig.Service
+
+	url := fmt.Sprintf("https://%v.%v:%v%v", service.Name, service.Namespace, service.Port, service.Path)
 
 	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM([]byte(webhook[caBundle]))
+	caCertPool.AppendCertsFromPEM(webhook.ClientConfig.CABundle)
 
 	client := &http.Client{
+		Timeout: time.Duration(webhook.TimeoutSecs) * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				RootCAs: caCertPool,
 			},
 		},
 	}
+
 	req, _ := http.NewRequestWithContext(context.TODO(), "POST", url, body)
 	for k, v := range r.Header {
 		for _, s := range v {
