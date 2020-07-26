@@ -25,9 +25,9 @@ type NamespacedValidatingProxyStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// NamespacedValidatingProxy is the Schema for the namespacedvalidatingproxies API
+// NamespacedValidatingProxy is the Schema for the namespacedvalidatingproxy API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=namespacedvalidatingproxies,scope=Namespaced
+// +kubebuilder:resource:path=namespacedvalidatingproxy,scope=Namespaced
 type NamespacedValidatingProxy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

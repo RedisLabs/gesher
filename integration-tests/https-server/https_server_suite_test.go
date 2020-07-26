@@ -24,7 +24,8 @@ var (
 	kubeClient  client.Client
 	serviceName string
 
-	crd         *apiextv1beta1.CustomResourceDefinition
+	crd1        *apiextv1beta1.CustomResourceDefinition
+	crd2        *apiextv1beta1.CustomResourceDefinition
 	service     *corev1.Service
 	sa          *corev1.ServiceAccount
 	role        *rbacv1beta1.ClusterRole
@@ -38,7 +39,8 @@ var _ = BeforeSuite(func() {
 	kubeClient, _, err = common.GetClient()
 	Expect(err).To(Succeed())
 
-	crd = common.LoadCRD()
+	crd1 = common.LoadProxyValidatingTypeCRD()
+	crd2 = common.LoadNamespacedValidatingProxyCRD()
 	service = common.LoadService()
 	serviceName = service.Name
 	sa = common.LoadServiceAccount()
@@ -47,9 +49,13 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	if crd != nil {
-		Expect(kubeClient.Delete(context.TODO(), crd)).To(Succeed())
-		crd = nil
+	if crd1 != nil {
+		Expect(kubeClient.Delete(context.TODO(), crd1)).To(Succeed())
+		crd1 = nil
+	}
+	if crd2 != nil {
+		Expect(kubeClient.Delete(context.TODO(), crd2)).To(Succeed())
+		crd1 = nil
 	}
 	if service != nil {
 		Expect(kubeClient.Delete(context.TODO(), service)).To(Succeed())

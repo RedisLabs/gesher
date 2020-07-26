@@ -23,7 +23,8 @@ func TestTypeController(t *testing.T) {
 }
 
 var (
-	crd         *v1beta1.CustomResourceDefinition
+	crd1        *v1beta1.CustomResourceDefinition
+	crd2        *v1beta1.CustomResourceDefinition
 	deploy      *appsv1.Deployment
 	sa          *corev1.ServiceAccount
 	service     *corev1.Service
@@ -41,7 +42,8 @@ var _ = BeforeSuite(func() {
 	kubeClient, _, err = common.GetClient()
 	Expect(err).To(Succeed())
 
-	crd = common.LoadCRD()
+	crd1 = common.LoadProxyValidatingTypeCRD()
+	crd2 = common.LoadNamespacedValidatingProxyCRD()
 	service = common.LoadService()
 	sa = common.LoadServiceAccount()
 	role = common.LoadClusterRole()
@@ -61,9 +63,14 @@ var _ = AfterSuite(func() {
 	}
 
 	// unload CRD
-	if crd != nil {
-		Expect(kubeClient.Delete(context.TODO(), crd)).To(Succeed())
-		crd = nil
+	if crd1 != nil {
+		Expect(kubeClient.Delete(context.TODO(), crd1)).To(Succeed())
+		crd1 = nil
+	}
+
+	if crd2 != nil {
+		Expect(kubeClient.Delete(context.TODO(), crd2)).To(Succeed())
+		crd2 = nil
 	}
 
 	if service != nil {

@@ -79,12 +79,25 @@ func GetClient() (client.Client, kubernetes.Interface, error) {
 	return kubeClient, cl, nil
 }
 
-func LoadCRD() *apiextv1beta1.CustomResourceDefinition {
+func LoadProxyValidatingTypeCRD() *apiextv1beta1.CustomResourceDefinition {
 	By("Read and Load CRD")
 
 	c := &apiextv1beta1.CustomResourceDefinition{}
 
 	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_proxyvalidatingtypes_crd.yaml")
+	Expect(err).To(BeNil())
+	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(c)).To(Succeed())
+	Expect(kubeClient.Create(context.TODO(), c)).To(Succeed())
+
+	return c
+}
+
+func LoadNamespacedValidatingProxyCRD() *apiextv1beta1.CustomResourceDefinition {
+	By("Read and Load CRD")
+
+	c := &apiextv1beta1.CustomResourceDefinition{}
+
+	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_namespacedvalidatingproxy_crd.yaml")
 	Expect(err).To(BeNil())
 	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(c)).To(Succeed())
 	Expect(kubeClient.Create(context.TODO(), c)).To(Succeed())
