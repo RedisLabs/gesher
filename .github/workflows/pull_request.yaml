@@ -5,8 +5,8 @@ on:
     branches: [ master ]
 
 jobs:
-  test_and_lint:
-    name: Unit Test and Lint
+  test_and_build_andpush:
+    name: Unit Test, Lint, Build and Push
     runs-on: ubuntu-latest
     steps:
 
@@ -27,18 +27,9 @@ jobs:
     - name: Go Unit Test
       run: go test ./pkg/...
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-
-    - name: Check out code
-      uses: actions/checkout@v2
-
     - name: Docker build
       uses: docker/build-push-action@v1
       with:
         repository: redislabs/gesher
         tags: latest
         push: false
-
