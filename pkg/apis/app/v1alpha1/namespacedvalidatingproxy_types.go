@@ -48,3 +48,7 @@ type NamespacedValidatingProxyList struct {
 func init() {
 	SchemeBuilder.Register(&NamespacedValidatingProxy{}, &NamespacedValidatingProxyList{})
 }
+
+func (nvp *NamespacedValidatingProxy) GetObservedGeneration() int64 {
+	return nvp.Status.ObservedGeneration
+}

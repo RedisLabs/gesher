@@ -51,3 +51,7 @@ type ProxyValidatingTypeList struct {
 func init() {
 	SchemeBuilder.Register(&ProxyValidatingType{}, &ProxyValidatingTypeList{})
 }
+
+func (pvt *ProxyValidatingType) GetObservedGeneration() int64 {
+	return pvt.Status.ObservedGeneration
+}

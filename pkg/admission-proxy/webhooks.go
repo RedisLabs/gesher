@@ -9,7 +9,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/klog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,13 +19,12 @@ import (
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 
 	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingproxy"
-
 )
 
 func findWebhooks(request *v1beta1.AdmissionRequest) []namespacedvalidatingproxy.WebhookConfig {
 	op := admv1beta1.OperationType(request.Operation)
 
-	return namespacedvalidatingproxy.EndpointData.Get(request.Namespace, request.RequestKind, op)
+	return namespacedvalidatingproxy.EndpointData.Get(request.Namespace, request.Resource, op)
 }
 
 // code is inspired by k8s.io/apiserver/pkg/admission/plugin/webhook/validating/dispatcher.go
@@ -34,7 +35,9 @@ func checkWebhooks(webhooks []namespacedvalidatingproxy.WebhookConfig, r *http.R
 
 	wg := &sync.WaitGroup{}
 	errCh := make(chan error, len(webhooks))
+
 	wg.Add(len(webhooks))
+
 	for _, webhook := range webhooks {
 		go doWebhook(webhook, wg, r, body, errCh)
 	}
@@ -63,10 +66,9 @@ func checkWebhooks(webhooks []namespacedvalidatingproxy.WebhookConfig, r *http.R
 func doWebhook(webhook namespacedvalidatingproxy.WebhookConfig, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
 	defer wg.Done()
 
-	service := webhook.ClientConfig.Service
+	url := serviceToUrl(webhook.ClientConfig.Service)
 
-	url := fmt.Sprintf("https://%v.%v:%v%v", service.Name, service.Namespace, service.Port, service.Path)
-
+	// TODO: Perhaps include system wide certs here?
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(webhook.ClientConfig.CABundle)
 
@@ -79,7 +81,14 @@ func doWebhook(webhook namespacedvalidatingproxy.WebhookConfig, wg *sync.WaitGro
 		},
 	}
 
-	req, _ := http.NewRequestWithContext(context.TODO(), "POST", url, body)
+	req, err := http.NewRequestWithContext(context.TODO(), "POST", url, body)
+	if err != nil {
+		klog.Errorf("doWebhook: NewRequestWithContext failed: %v", err)
+		err = toFailure("webhook", nil, err, webhook.FailurePolicy)
+		errCh <- err
+		return
+	}
+
 	for k, v := range r.Header {
 		for _, s := range v {
 			req.Header.Add(k, s)
@@ -90,10 +99,33 @@ func doWebhook(webhook namespacedvalidatingproxy.WebhookConfig, wg *sync.WaitGro
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
 	}
-	failurePolicy := admv1beta1.Fail
-	err = toFailure("webhook", resp, err, failurePolicy)
+	err = toFailure("webhook", resp, err, webhook.FailurePolicy)
 
 	errCh <- err
+}
+
+func serviceToUrl(service *admv1beta1.ServiceReference) string {
+	if service == nil {
+		return ""
+	}
+
+	sb := strings.Builder{}
+	sb.Grow(2048)
+
+	sb.WriteString("https://")
+	sb.WriteString(service.Name)
+	sb.WriteString(".")
+	sb.WriteString(service.Namespace)
+	if service.Port != nil {
+		sb.WriteString(fmt.Sprintf(":%v", *service.Port))
+	}
+	if service.Path != nil {
+		sb.WriteString(*service.Path)
+	} else {
+		sb.WriteString("/")
+	}
+
+	return sb.String()
 }
 
 func toFailure(name string, resp *http.Response, httpErr error, failurePolicy admv1beta1.FailurePolicyType) error {

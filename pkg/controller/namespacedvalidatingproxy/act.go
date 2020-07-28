@@ -21,14 +21,14 @@ func act(kubeClient client.Client, state *analyzedState, logger logr.Logger) err
 	statusChange = ret || statusChange
 
 	if fullChange {
-		logger.Info("doing full update")
+		logger.V(2).Info("doing full update")
 		err := kubeClient.Update(context.TODO(), state.customResource)
 		if err != nil {
 			logger.Error(err, "failed to do full update")
 			return err
 		}
 	} else if statusChange {
-		logger.Info("doing status update")
+		logger.V(2).Info("doing status update")
 		err := kubeClient.Status().Update(context.TODO(), state.customResource)
 		if err != nil {
 			logger.Error(err, "failed to do status update")
@@ -47,13 +47,13 @@ func manageFinalizer(state *analyzedState, logger logr.Logger) bool {
 	switch state.delete {
 	case false:
 		if !containsString(state.customResource.ObjectMeta.Finalizers, proxyFinalizer) {
-			logger.Info("adding finalizer")
+			logger.V(2).Info("adding finalizer")
 			state.customResource.ObjectMeta.Finalizers = append(state.customResource.ObjectMeta.Finalizers, proxyFinalizer)
 			ret = true
 		}
 	case true:
 		if containsString(state.customResource.ObjectMeta.Finalizers, proxyFinalizer) {
-			logger.Info("removing finalizer")
+			logger.V(2).Info("removing finalizer")
 			state.customResource.ObjectMeta.Finalizers = removeString(state.customResource.ObjectMeta.Finalizers, proxyFinalizer)
 			ret = true
 		}
@@ -66,7 +66,7 @@ func manageGeneration(state *analyzedState, logger logr.Logger) bool {
 	var ret bool
 
 	if state.customResource.Status.ObservedGeneration != state.customResource.Generation {
-		logger.Info("updating observed generation in status")
+		logger.V(2).Info("updating observed generation in status")
 		state.customResource.Status.ObservedGeneration = state.customResource.Generation
 		ret = true
 	}

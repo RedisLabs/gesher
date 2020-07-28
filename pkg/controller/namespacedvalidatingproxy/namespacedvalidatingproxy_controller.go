@@ -14,11 +14,6 @@ import (
 
 var log = logf.Log.WithName("controller_namespacedvalidatingproxy")
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new NamespacedValidatingProxy Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -65,7 +60,7 @@ type ReconcileNamespacedValidatingProxy struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileNamespacedValidatingProxy) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling NamespacedValidatingProxy")
+	reqLogger.V(1).Info("Reconciling NamespacedValidatingProxy")
 
 	observedState, err := observe(r.client, request, reqLogger)
 	if err != nil {

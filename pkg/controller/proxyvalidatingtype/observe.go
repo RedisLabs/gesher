@@ -52,10 +52,10 @@ func observe(client client.Client, request reconcile.Request, logger logr.Logger
 			// Error reading the object
 			return nil, err
 		}
-		logger.Info("cluster webhook doesn't exist yet")
+		logger.V(2).Info("cluster webhook doesn't exist yet")
 		state.clusterWebhook = nil
 	} else {
-		logger.Info(fmt.Sprintf("clusterWebhook = %+v", state.clusterWebhook))
+		logger.V(2).Info(fmt.Sprintf("clusterWebhook = %+v", state.clusterWebhook))
 	}
 
 	return state, nil

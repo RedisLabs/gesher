@@ -20,10 +20,10 @@ func analyze(observed *observeState, logger logr.Logger) (*analyzedState, error)
 
 	switch observed.customResource.DeletionTimestamp.IsZero() {
 	case true:
-		logger.Info("DeletionTimeStamp is zero")
+		logger.V(2).Info("DeletionTimeStamp is zero")
 		state.newEndpointData = EndpointData.Update(observed.customResource)
 	case false:
-		logger.Info("DeletionTimeStamp is not zero, deleting")
+		logger.V(2).Info("DeletionTimeStamp is not zero, deleting")
 		state.newEndpointData = EndpointData.Delete(observed.customResource)
 		state.delete = true
 	}

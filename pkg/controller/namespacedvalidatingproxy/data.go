@@ -4,14 +4,18 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
 	"k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
+
 )
 
 var (
-	EndpointData = &EndpointDataType{}
+	EndpointData = &EndpointDataType{
+		Mapping: make(typeNamespaceMap),
+	}
 )
 
 type WebhookConfig struct {
@@ -22,8 +26,8 @@ type WebhookConfig struct {
 
 type typeInstanceMap map[types.UID]WebhookConfig
 type typeOpMap map[v1beta1.OperationType]typeInstanceMap
-type typeKindMap map[string]typeOpMap
-type typeVersionMap map[string]typeKindMap
+type typeResourceMap map[string]typeOpMap
+type typeVersionMap map[string]typeResourceMap
 type typeGroupMap map[string]typeVersionMap
 type typeNamespaceMap map[string]typeGroupMap
 
@@ -31,11 +35,11 @@ type EndpointDataType struct {
 	Mapping typeNamespaceMap
 }
 
-func (p *EndpointDataType) Get(namespace string, kind *metav1.GroupVersionKind, op v1beta1.OperationType) []WebhookConfig {
+func (p *EndpointDataType) Get(namespace string, resource metav1.GroupVersionResource, op v1beta1.OperationType) []WebhookConfig {
 	var ret []WebhookConfig
 
 	if groupMap, ok := p.Mapping[namespace]; ok {
-		groupList := []string{kind.Group, "*"}
+		groupList := []string{resource.Group, "*"}
 		var versionMapList []typeVersionMap
 
 		for _, group := range groupList {
@@ -44,21 +48,21 @@ func (p *EndpointDataType) Get(namespace string, kind *metav1.GroupVersionKind, 
 			}
 		}
 
-		versionList := []string{kind.Version, "*"}
-		var kindMapList []typeKindMap
+		versionList := []string{resource.Version, "*"}
+		var resourceMapList []typeResourceMap
 		for _, versionMap := range versionMapList {
 			for _, version := range versionList {
-				if kindMap, ok := versionMap[version]; ok {
-					kindMapList = append(kindMapList, kindMap)
+				if resourceMap, ok := versionMap[version]; ok {
+					resourceMapList = append(resourceMapList, resourceMap)
 				}
 			}
 		}
 
-		kindList := []string{kind.Kind, "*"}
+		resourceList := []string{resource.Resource, "*"}
 		var opMapList []typeOpMap
-		for _, kindMap := range kindMapList {
-			for _, kind := range kindList {
-				if opMap, ok := kindMap[kind]; ok {
+		for _, resourceMap := range resourceMapList {
+			for _, resource := range resourceList {
+				if opMap, ok := resourceMap[resource]; ok {
 					opMapList = append(opMapList, opMap)
 				}
 			}
@@ -99,6 +103,8 @@ func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingProxy) *Endpoi
 	groupMap := namespaceMap[t.Namespace]
 
 	for _, webhook := range t.Spec.Webhooks {
+		webhookConfig := createWebhookConfig(webhook)
+
 		for _, webhookRule := range webhook.Rules {
 			var versionMapList []typeVersionMap
 			for _, group := range webhookRule.APIGroups {
@@ -109,24 +115,24 @@ func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingProxy) *Endpoi
 				}
 				versionMapList = append(versionMapList, versionMap)
 			}
-			var kindMapList []typeKindMap
+			var resourceMapList []typeResourceMap
 			for _, versionMap := range versionMapList {
 				for _, version := range webhookRule.APIVersions {
-					kindMap, ok := versionMap[version]
+					resourceMap, ok := versionMap[version]
 					if !ok {
-						versionMap[version] = make(typeKindMap)
-						kindMap = versionMap[version]
+						versionMap[version] = make(typeResourceMap)
+						resourceMap = versionMap[version]
 					}
-					kindMapList = append(kindMapList, kindMap)
+					resourceMapList = append(resourceMapList, resourceMap)
 				}
 			}
 			var opMapList []typeOpMap
-			for _, kindMap := range kindMapList {
-				for _, kind := range webhookRule.Resources {
-					opMap, ok := kindMap[kind]
+			for _, resourceMap := range resourceMapList {
+				for _, resource := range webhookRule.Resources {
+					opMap, ok := resourceMap[resource]
 					if !ok {
-						kindMap[kind] = make(typeOpMap)
-						opMap = kindMap[kind]
+						resourceMap[resource] = make(typeOpMap)
+						opMap = resourceMap[resource]
 					}
 					opMapList = append(opMapList, opMap)
 				}
@@ -140,29 +146,38 @@ func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingProxy) *Endpoi
 						instanceMap = opMap[op]
 					}
 
-					var failurePolicy v1beta1.FailurePolicyType
-					if webhook.FailurePolicy == nil {
-						failurePolicy = v1beta1.Fail
-					} else {
-						failurePolicy = *webhook.FailurePolicy
-					}
-					var timeout int32
-					if webhook.TimeoutSeconds == nil {
-						timeout = 30
-					} else {
-						timeout = *webhook.TimeoutSeconds
-					}
-					instanceMap[t.UID] = WebhookConfig{
-						ClientConfig:  webhook.ClientConfig,
-						FailurePolicy: failurePolicy,
-						TimeoutSecs:   timeout,
-					}
+					instanceMap[t.UID] = webhookConfig
 				}
 			}
 		}
 	}
 
 	return newE
+}
+
+func createWebhookConfig(webhook v1beta1.ValidatingWebhook) WebhookConfig {
+	var (
+		failurePolicy v1beta1.FailurePolicyType
+		timeout int32
+	)
+
+	if webhook.FailurePolicy == nil {
+		failurePolicy = v1beta1.Fail
+	} else {
+		failurePolicy = *webhook.FailurePolicy
+	}
+
+	if webhook.TimeoutSeconds == nil {
+		timeout = 30
+	} else {
+		timeout = *webhook.TimeoutSeconds
+	}
+
+	return WebhookConfig{
+		ClientConfig:  webhook.ClientConfig,
+		FailurePolicy: failurePolicy,
+		TimeoutSecs:   timeout,
+	}
 }
 
 func copyEndpointData(p *EndpointDataType) *EndpointDataType {
@@ -190,8 +205,8 @@ func (p *EndpointDataType) Delete(t *appv1alpha1.NamespacedValidatingProxy) *End
 
 	if groupMap, ok := newE.Mapping[t.Namespace]; ok {
 		for _, versionMap := range groupMap {
-			for _, kindMap := range versionMap {
-				for _, opMap := range kindMap {
+			for _, resourceMap := range versionMap {
+				for _, opMap := range resourceMap {
 					for _, instanceMap := range opMap {
 						delete(instanceMap, t.UID)
 					}
@@ -211,5 +226,5 @@ func (p *EndpointDataType) Update(t *appv1alpha1.NamespacedValidatingProxy) *End
 }
 
 func (p *EndpointDataType) GenerateConfig() {
-	// If we would generatean external config, perhaps stored in a config map
+	// If we would generate an external config for use by an external proxy pod, perhaps stored in a config map
 }

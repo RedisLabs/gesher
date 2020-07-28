@@ -17,11 +17,11 @@ const (
 
 	namespace = "test"
 
-	testGroup1   = "testGroup1"
-	testVersion1 = "testVersion1"
-	testKind1    = "testKind1"
-	testOp1      = v1beta1.Create
-	testOp2      = v1beta1.Delete
+	testGroup1    = "testGroup1"
+	testVersion1  = "testVersion1"
+	testResource1 = "testResource1"
+	testOp1       = v1beta1.Create
+	testOp2       = v1beta1.Delete
 )
 
 var (
@@ -39,7 +39,7 @@ var (
 					Rule: v1beta1.Rule{
 						APIGroups:   []string{testGroup1},
 						APIVersions: []string{testVersion1},
-						Resources:   []string{testKind1},
+						Resources:   []string{testResource1},
 					},
 				}},
 			}},
@@ -60,7 +60,7 @@ var (
 					Rule: v1beta1.Rule{
 						APIGroups:   []string{testGroup1},
 						APIVersions: []string{testVersion1},
-						Resources:   []string{testKind1},
+						Resources:   []string{testResource1},
 					},
 				}},
 			}},
@@ -84,7 +84,7 @@ var (
 					Rule: v1beta1.Rule{
 						APIGroups:   []string{testGroup1},
 						APIVersions: []string{testVersion1},
-						Resources:   []string{testKind1},
+						Resources:   []string{testResource1},
 					},
 				}},
 			}},
@@ -104,11 +104,11 @@ func TestAdd(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotEmpty(t, versionMap)
 
-	kindMap, ok := versionMap[testVersion1]
+	resourceMap, ok := versionMap[testVersion1]
 	assert.True(t, ok)
-	assert.NotEmpty(t, kindMap)
+	assert.NotEmpty(t, resourceMap)
 
-	opMap, ok := kindMap[testKind1]
+	opMap, ok := resourceMap[testResource1]
 	assert.True(t, ok)
 	assert.NotEmpty(t, opMap)
 
@@ -132,11 +132,11 @@ func TestDelete(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotEmpty(t, versionMap)
 
-	kindMap, ok := versionMap[testVersion1]
+	resourceMap, ok := versionMap[testVersion1]
 	assert.True(t, ok)
-	assert.NotEmpty(t, kindMap)
+	assert.NotEmpty(t, resourceMap)
 
-	opMap, ok := kindMap[testKind1]
+	opMap, ok := resourceMap[testResource1]
 	assert.True(t, ok)
 	assert.NotEmpty(t, opMap)
 
@@ -158,11 +158,11 @@ func TestUpdate(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotEmpty(t, versionMap)
 
-	kindMap, ok := versionMap[testVersion1]
+	resourceMap, ok := versionMap[testVersion1]
 	assert.True(t, ok)
-	assert.NotEmpty(t, kindMap)
+	assert.NotEmpty(t, resourceMap)
 
-	opMap, ok := kindMap[testKind1]
+	opMap, ok := resourceMap[testResource1]
 	assert.True(t, ok)
 	assert.NotEmpty(t, opMap)
 
@@ -180,7 +180,7 @@ func TestUpdate(t *testing.T) {
 func TestGet(t *testing.T) {
 	endpoindData := &EndpointDataType{}
 	newE := endpoindData.Add(resource2)
-	w := newE.Get(namespace, &metav1.GroupVersionKind{Group: testGroup1, Version: testVersion1, Kind: testKind1}, testOp1)
+	w := newE.Get(namespace, metav1.GroupVersionResource{Group: testGroup1, Version: testVersion1, Resource: testResource1}, testOp1)
 	assert.NotEmpty(t, w)
 	assert.Len(t, w, 1)
 	assert.Equal(t, w[0].ClientConfig.Service.Namespace, namespace)

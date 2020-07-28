@@ -8,7 +8,9 @@ import (
 	"github.com/redislabs/gesher/cmd/manager/flags"
 	"io/ioutil"
 	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/googleapis/gnostic/compiler"
@@ -39,6 +41,17 @@ import (
 const (
 	webhookResourceName = proxyvalidatingtype.ProxyWebhookName
 )
+
+type verifyDeletion interface {
+	runtime.Object
+	metav1.Object
+}
+
+type appliableObject interface {
+	metav1.Object
+	runtime.Object
+	GetObservedGeneration() int64
+}
 
 var (
 	kubeClient client.Client
@@ -225,18 +238,21 @@ func VerifyEmpty() error {
 	}
 }
 
-func VerifyApplied(pt *v1alpha1.ProxyValidatingType) error {
-	fmt.Fprintf(GinkgoWriter, "Verifying that PVR %v was applied by operator: ", pt.Name)
+func VerifyApplied(t appliableObject) error {
+	name := t.GetName()
 
-	prevGen := pt.Status.ObservedGeneration
-	name := pt.Name
+	fmt.Fprintf(GinkgoWriter, "Verifying that %v was applied by operator: ", name)
 
-	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: name}, pt)
+	prevGen := t.GetObservedGeneration()
+
+	err := kubeClient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: t.GetNamespace()}, t)
+
 	if err != nil {
 		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
-	if prevGen == pt.Status.ObservedGeneration || pt.Generation != pt.Status.ObservedGeneration {
+
+	if prevGen == t.GetObservedGeneration() || t.GetGeneration() != t.GetObservedGeneration() {
 		err := errors.New("operator hasn't updated generation in status yet")
 		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
@@ -246,14 +262,14 @@ func VerifyApplied(pt *v1alpha1.ProxyValidatingType) error {
 	return nil
 }
 
-func VerifyDeleted(pt *v1alpha1.ProxyValidatingType) error {
-	fmt.Fprintf(GinkgoWriter, "Verifying that PVR %v was deleted: ", pt.Name)
+func VerifyDeleted(t verifyDeletion) error {
+	name := t.GetName()
 
-	name := pt.Name
+	fmt.Fprintf(GinkgoWriter, "Verifying that %v was deleted: ", name)
 
-	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: name}, pt)
+	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: t.GetNamespace()}, t)
 	if err == nil {
-		err := fmt.Errorf("%v not deleted yet", pt.Name)
+		err := fmt.Errorf("%v not deleted yet", name)
 		fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
 		return err
 	}
@@ -263,6 +279,7 @@ func VerifyDeleted(pt *v1alpha1.ProxyValidatingType) error {
 	}
 
 	fmt.Fprintf(GinkgoWriter, "Success!\n")
+
 	return nil
 }
 
@@ -394,3 +411,115 @@ func VerifyEndpoint(e, namespace string) error {
 	fmt.Fprintf(GinkgoWriter, "Success!\n")
 	return nil
 }
+
+func VerifyNoEndpoint(e, namespace string) error {
+	fmt.Fprintf(GinkgoWriter, "Verifying Service Endpoint is gone: ")
+
+	var endpoint v1.Endpoints
+
+	err := kubeClient.Get(context.TODO(), types.NamespacedName{Name: e, Namespace: namespace}, &endpoint)
+	if err != nil {
+		fmt.Fprintf(GinkgoWriter, "Failed to get Endpoint: %v\n", err)
+		return err
+	}
+
+	if len(endpoint.Subsets) == 0 || len(endpoint.Subsets[0].Addresses) == 0 {
+		fmt.Fprintf(GinkgoWriter, "Success Endpoint is gone!\n")
+		return nil
+	}
+
+	err = errors.New("endpoint address still exists")
+	fmt.Fprintf(GinkgoWriter, "Failed: %v\n", err)
+
+	return err
+}
+
+func LoadAdmissionDeploy() *appsv1.Deployment {
+	By("Read and Load Deployment")
+
+	deploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "admission-test",
+			Namespace: Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "admission-test"},
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "admission-test"},
+				},
+				Spec: v1.PodSpec{
+					ServiceAccountName: "gesher",
+					Containers: []v1.Container{
+						{
+							Name:    "admission-test",
+							Image:   "quay.io/spotter/gesher-admisison-test:test",
+							Command: []string{"/admission"},
+							Env: []v1.EnvVar{
+								{
+									Name: "POD_NAMESPACE",
+									ValueFrom: &v1.EnvVarSource{
+										FieldRef: &v1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
+							ImagePullPolicy: v1.PullAlways,
+							Ports: []v1.ContainerPort{
+								{
+									ContainerPort: 9443,
+								},
+							},
+							ReadinessProbe: &v1.Probe{
+								Handler: v1.Handler{
+									HTTPGet: &v1.HTTPGetAction{
+										Path:   "/healthz",
+										Port:   intstr.IntOrString{IntVal: 9443},
+										Scheme: "HTTPS",
+									},
+								},
+								TimeoutSeconds:   5,
+								PeriodSeconds:    5,
+								SuccessThreshold: 1,
+								FailureThreshold: 3,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	Expect(kubeClient.Create(context.TODO(), deploy)).To(Succeed())
+
+	Eventually(func() error { return WaitForDeployment(deploy) }, 60, 5).Should(Succeed())
+
+	return deploy
+}
+
+func LoadTestService() *v1.Service {
+	By("Read and load Service")
+
+	s := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "admission-test",
+			Namespace: Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.IntOrString{IntVal: 9443},
+			}},
+			Selector: map[string]string{"app": "admission-test"},
+		},
+	}
+
+	Expect(kubeClient.Create(context.TODO(), s)).To(Succeed())
+
+	return s
+}
+

@@ -3,7 +3,6 @@ package admission_tester_test
 import (
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"testing"
 
 	"github.com/redislabs/gesher/integration-tests/common"
@@ -45,8 +44,8 @@ var _ = BeforeSuite(func() {
 	role = common.LoadClusterRole()
 	roleBinding = common.LoadClusterRoleBinding()
 
-	service = loadService()
-	deploy = loadDeploy()
+	service = common.LoadTestService()
+	deploy = common.LoadAdmissionDeploy()
 
 	var s corev1.Secret
 	Expect(kubeClient.Get(context.TODO(), types.NamespacedName{Name: "admission-test", Namespace: common.Namespace}, &s)).To(Succeed())
@@ -85,96 +84,6 @@ var _ = AfterSuite(func() {
 		roleBinding = nil
 	}
 })
-
-func loadService() *corev1.Service {
-	By("Read and load Service")
-
-	s := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "admission-test",
-			Namespace: common.Namespace,
-		},
-		Spec:       corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.IntOrString{IntVal: 9443},
-			}},
-			Selector: map[string]string{"app": "admission-test"},
-		},
-	}
-
-	Expect(kubeClient.Create(context.TODO(), s)).To(Succeed())
-
-	return s
-}
-
-func loadDeploy() *appsv1.Deployment {
-	By("Read and Load Deployment")
-
-	deploy := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "admission-test",
-			Namespace: common.Namespace,
-		},
-		Spec:       appsv1.DeploymentSpec{
-			Selector:                &metav1.LabelSelector{
-				MatchLabels:      map[string]string{"app": "admission-test"},
-			},
-			Template:                corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "admission-test"},
-				},
-				Spec:       corev1.PodSpec{
-					ServiceAccountName: "gesher",
-					Containers:                    []corev1.Container{
-						{
-							Name: "admission-test",
-							Image: "quay.io/spotter/gesher-admisison-test:test",
-							Command: []string{"/admission"},
-							Env: []corev1.EnvVar{
-								{
-									Name: "POD_NAMESPACE",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef:         &corev1.ObjectFieldSelector{
-											FieldPath:  "metadata.namespace",
-										},
-									},
-								},
-							},
-							ImagePullPolicy: corev1.PullAlways,
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: 9443,
-								},
-							},
-							ReadinessProbe: &corev1.Probe{
-								Handler:             corev1.Handler{
-									HTTPGet:   &corev1.HTTPGetAction{
-										Path:        "/healthz",
-										Port:        intstr.IntOrString{IntVal: 9443},
-										Scheme:      "HTTPS",
-									},
-								},
-								TimeoutSeconds:      5,
-								PeriodSeconds:       5,
-								SuccessThreshold:    1,
-								FailureThreshold:    3,
-							},
-						},
-					},
-
-				},
-			},
-		},
-	}
-
-	Expect(kubeClient.Create(context.TODO(), deploy)).To(Succeed())
-
-	Eventually(func() error { return common.WaitForDeployment(deploy) }, 60, 5).Should(Succeed())
-
-	return deploy
-}
 
 func loadWebhook(s *corev1.Secret) *v1beta1.ValidatingWebhookConfiguration {
 	By("Read and Load Webhook")
