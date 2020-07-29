@@ -39,6 +39,9 @@ jobs:
 
     - name: integration tests
       run: |
+        echo "GITHUB_SHA = $GITHUB_SHA"
+        echo "GITHUB_REF = $GITHUB_REF"
+        echo "SHA_TAG = sha-${GITHUB_SHA:0:7}"
         go get github.com/onsi/ginkgo/ginkgo
         go get github.com/onsi/gomega/...
         ginkgo -v integration-tests/...
