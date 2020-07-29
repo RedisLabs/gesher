@@ -33,3 +33,12 @@ jobs:
         repository: redislabs/gesher
         tags: latest
         push: false
+
+    - name: KinD (Kubernetes in Docker) Action
+      uses: engineerd/setup-kind@v0.4.0
+
+    - name: integration tests
+      run: |
+        go get github.com/onsi/ginkgo/ginkgo
+        go get github.com/onsi/gomega/...
+        ginkgo -v integration-tests/...
