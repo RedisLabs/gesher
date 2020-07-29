@@ -95,6 +95,9 @@ var _ = Describe("TypeController", func() {
 		pt1.Spec.Types[0].Operations[0] = op2
 		Expect(kubeClient.Update(context.TODO(), pt1)).To(Succeed())
 
+		By("Wait on Update")
+		Eventually(func() error { return common.VerifyApplied(pt1) }, 60, 5).Should(Succeed())
+
 		By("validate webhook")
 		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1})).To(Succeed())
 	})
