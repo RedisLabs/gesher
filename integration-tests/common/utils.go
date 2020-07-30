@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"os"
 
 	"github.com/googleapis/gnostic/compiler"
 
@@ -181,6 +182,14 @@ func LoadOperator(desc string) *appsv1.Deployment {
 	Expect(err).To(BeNil())
 	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(deploy)).To(Succeed())
 	deploy.Namespace = Namespace
+
+	// Test if running withing a github action
+	if os.Getenv("CI") == "true" {
+		fmt.Fprintf(GinkgoWriter, "Running from within github action\n")
+		deploy.Spec.Template.Spec.Containers[0].Image = "redislabs/gesher:test"
+		deploy.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullNever
+	}
+
 	Expect(kubeClient.Create(context.TODO(), deploy)).To(Succeed())
 
 	Eventually(func() error { return WaitForDeployment(deploy) }, 60, 5).Should(Succeed())

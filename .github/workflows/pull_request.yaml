@@ -31,7 +31,7 @@ jobs:
       uses: docker/build-push-action@v1
       with:
         repository: redislabs/gesher
-        tags: latest
+        tags: test
         push: false
 
     - name: KinD (Kubernetes in Docker) Action
@@ -39,9 +39,7 @@ jobs:
 
     - name: integration tests
       run: |
-        echo "GITHUB_SHA = $GITHUB_SHA"
-        echo "GITHUB_REF = $GITHUB_REF"
-        echo "SHA_TAG = sha-${GITHUB_SHA:0:7}"
+        kind load redislabs/gesher:test redislabs/gesher:test
         go get github.com/onsi/ginkgo/ginkgo
         go get github.com/onsi/gomega/...
         ginkgo -v integration-tests/...
