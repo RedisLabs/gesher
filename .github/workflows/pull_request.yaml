@@ -39,6 +39,7 @@ jobs:
 
     - name: integration tests
       run: |
+        env
         kind load redislabs/gesher:test redislabs/gesher:test
         go get github.com/onsi/ginkgo/ginkgo
         go get github.com/onsi/gomega/...
