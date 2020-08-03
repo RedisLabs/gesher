@@ -188,9 +188,6 @@ func LoadOperator(desc string) *appsv1.Deployment {
 		fmt.Fprintf(GinkgoWriter, "Running from within github action\n")
 		deploy.Spec.Template.Spec.Containers[0].Image = "redislabs/gesher:test"
 		deploy.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullNever
-	} else {
-		fmt.Fprintf(GinkgoWriter, "Not running from within a github action\n")
-		fmt.Fprintf(GinkgoWriter, "Environ = %+v\n", os.Environ())
 	}
 
 	Expect(kubeClient.Create(context.TODO(), deploy)).To(Succeed())
