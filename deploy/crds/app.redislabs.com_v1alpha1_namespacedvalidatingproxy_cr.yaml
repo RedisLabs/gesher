@@ -1,0 +1,7 @@
+apiVersion: app.redislabs.com/v1alpha1
+kind: NamespacedValidatingProxy
+metadata:
+  name: example-namespacedvalidatingproxy
+spec:
+  # Add fields here
+  size: 3

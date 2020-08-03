@@ -5,72 +5,39 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/klog"
 	"net/http"
-	"os"
-	"strconv"
+	"strings"
 	"sync"
+	"time"
 
 	"k8s.io/api/admission/v1beta1"
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+
+	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingproxy"
 )
 
-// temporary dumb webhook handler
-type Webhook map[string]string
+func findWebhooks(request *v1beta1.AdmissionRequest) []namespacedvalidatingproxy.WebhookConfig {
+	op := admv1beta1.OperationType(request.Operation)
 
-const (
-	serviceName = "service-name"
-	namespace   = "namespace"
-	port        = "port"
-	path        = "path"
-	caBundle    = "ca-bundle"
-)
-
-func findWebhooks(request *v1beta1.AdmissionRequest) []Webhook {
-	webhook := make(Webhook)
-
-	if webhook[serviceName] = os.Getenv("ADM_SERVICE_NAME"); webhook[serviceName] == "" {
-		panic("failed to read env variable ADM_SERVICE_NAME")
-	}
-	if webhook[namespace] = os.Getenv("ADM_SERVICE_NAMESPACE"); webhook[namespace] == "" {
-		panic("failed to read env variable ADM_SERVICE_NAMESPACE")
-	}
-	if webhook[path] = os.Getenv("ADM_SERVICE_ENDPOINT"); webhook[path] == "" {
-		panic("failed to read env variable ADM_SERVICE_ENDPOINT")
-	}
-	encoded := os.Getenv("ADM_SERVICE_CABUNDLE")
-	if encoded == "" {
-		panic("failed to read env variable ADM_SERVICE_CABUNDLE")
-	}
-	data, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		panic("failed to base64 decode cabundle")
-	}
-	webhook[caBundle] = string(data)
-
-	if webhook[port] = os.Getenv("ADM_SERVICE_PORT"); webhook[port] == "" {
-		panic("failed to read env variable ADM_SERVICE_PORT")
-	}
-	if _, err := strconv.Atoi(webhook[port]); err != nil {
-		panic(fmt.Errorf("failed to convert port to an int: %v", err))
-	}
-
-	return []Webhook{webhook}
+	return namespacedvalidatingproxy.EndpointData.Get(request.Namespace, request.Resource, op)
 }
 
 // code is inspired by k8s.io/apiserver/pkg/admission/plugin/webhook/validating/dispatcher.go
-func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
+func checkWebhooks(webhooks []namespacedvalidatingproxy.WebhookConfig, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
 	if len(webhooks) == 0 {
 		return approved()
 	}
 
 	wg := &sync.WaitGroup{}
 	errCh := make(chan error, len(webhooks))
+
 	wg.Add(len(webhooks))
+
 	for _, webhook := range webhooks {
 		go doWebhook(webhook, wg, r, body, errCh)
 	}
@@ -96,22 +63,32 @@ func checkWebhooks(webhooks []Webhook, r *http.Request, body *bytes.Reader) *v1b
 	return errToAdmissionResponse(errs[0])
 }
 
-func doWebhook(webhook Webhook, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
+func doWebhook(webhook namespacedvalidatingproxy.WebhookConfig, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
 	defer wg.Done()
 
-	url := fmt.Sprintf("https://%v.%v:%v%v", webhook[serviceName], webhook[namespace], webhook[port], webhook[path])
+	url := serviceToUrl(webhook.ClientConfig.Service)
 
+	// TODO: Perhaps include system wide certs here?
 	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM([]byte(webhook[caBundle]))
+	caCertPool.AppendCertsFromPEM(webhook.ClientConfig.CABundle)
 
 	client := &http.Client{
+		Timeout: time.Duration(webhook.TimeoutSecs) * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				RootCAs: caCertPool,
 			},
 		},
 	}
-	req, _ := http.NewRequestWithContext(context.TODO(), "POST", url, body)
+
+	req, err := http.NewRequestWithContext(context.TODO(), "POST", url, body)
+	if err != nil {
+		klog.Errorf("doWebhook: NewRequestWithContext failed: %v", err)
+		err = toFailure("webhook", nil, err, webhook.FailurePolicy)
+		errCh <- err
+		return
+	}
+
 	for k, v := range r.Header {
 		for _, s := range v {
 			req.Header.Add(k, s)
@@ -122,10 +99,33 @@ func doWebhook(webhook Webhook, wg *sync.WaitGroup, r *http.Request, body *bytes
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
 	}
-	failurePolicy := admv1beta1.Fail
-	err = toFailure("webhook", resp, err, failurePolicy)
+	err = toFailure("webhook", resp, err, webhook.FailurePolicy)
 
 	errCh <- err
+}
+
+func serviceToUrl(service *admv1beta1.ServiceReference) string {
+	if service == nil {
+		return ""
+	}
+
+	sb := strings.Builder{}
+	sb.Grow(2048)
+
+	sb.WriteString("https://")
+	sb.WriteString(service.Name)
+	sb.WriteString(".")
+	sb.WriteString(service.Namespace)
+	if service.Port != nil {
+		sb.WriteString(fmt.Sprintf(":%v", *service.Port))
+	}
+	if service.Path != nil {
+		sb.WriteString(*service.Path)
+	} else {
+		sb.WriteString("/")
+	}
+
+	return sb.String()
 }
 
 func toFailure(name string, resp *http.Response, httpErr error, failurePolicy admv1beta1.FailurePolicyType) error {

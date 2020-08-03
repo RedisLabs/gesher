@@ -20,6 +20,12 @@ func act(c client.Client, state *analyzedState, logger logr.Logger) error {
 		logger.Info("Skipping cluster webhook update")
 	}
 
+	// Is this is just a system webhook modification detection change, then exit as no custom resource to update
+	if state.customResource == nil {
+		return nil
+	}
+
+	// keep resource status up to date
 	var fullChange bool
 	ret := manageFinalizer(state, logger)
 	fullChange = ret || fullChange

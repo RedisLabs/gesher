@@ -10,9 +10,9 @@ spec:
     plural: proxyvalidatingtypes
     singular: proxyvalidatingtype
   scope: Cluster
-  subresources:
-    status: {}
   versions:
   - name: v1alpha1
     served: true
     storage: true
+  subresources:
+    status: {}

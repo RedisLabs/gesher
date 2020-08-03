@@ -52,10 +52,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to secondary resource ValidatingWebhookConfiguration and requeue the owner ProxyValidatingType
-	// TODO: Need to figure out how to "own" the type we make when its not really tied to an individual resource
-	err = c.Watch(&source.Kind{Type: &v1beta1.ValidatingWebhookConfiguration{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &appv1alpha1.ProxyValidatingType{},
+	err = c.Watch(&source.Kind{Type: &v1beta1.ValidatingWebhookConfiguration{}}, &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+			if a.Meta.GetName() == ProxyWebhookName {
+				// return a "zero" NamespacedName: reconcile func knows to then recreate ValidatingWebhookConfiguration
+				return []reconcile.Request{{}}
+			}
+			// some other ValidatingWebhookConfiguration, so we ignore it
+			return nil
+		}),
 	})
 	if err != nil {
 		return err

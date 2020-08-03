@@ -37,7 +37,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The AdmissionReview that will be returned
 	responseAdmissionReview := v1beta1.AdmissionReview{}
 
-	log.Info(fmt.Sprintf("%v %v", requestedAdmissionReview, responseAdmissionReview))
+	log.V(2).Info(fmt.Sprintf("%v %v", requestedAdmissionReview, responseAdmissionReview))
 
 	deserializer := apiserver.Codecs.UniversalDeserializer()
 
@@ -52,7 +52,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Return the same UID
 	responseAdmissionReview.Response.UID = requestedAdmissionReview.Request.UID
 
-	log.Info(fmt.Sprintf("sending response: %v", responseAdmissionReview.Response))
+	log.V(2).Info(fmt.Sprintf("sending response: %v", responseAdmissionReview.Response))
 
 	respBytes, err := json.Marshal(responseAdmissionReview)
 	if err != nil {

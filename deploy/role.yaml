@@ -5,9 +5,9 @@ metadata:
   name: gesher
 rules:
 - apiGroups:
-  - "admissionregistration.k8s.io" 
+  - admissionregistration.k8s.io
   resources:
-  - "validatingwebhookconfigurations" 
+  - validatingwebhookconfigurations
   verbs:
   - create
   - delete
@@ -82,6 +82,7 @@ rules:
   - app.redislabs.com
   resources:
   - '*'
+  - namespacedvalidatingproxies
   verbs:
   - create
   - delete
