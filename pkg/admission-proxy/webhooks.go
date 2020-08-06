@@ -34,17 +34,17 @@ import (
 	"k8s.io/api/admission/v1beta1"
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 
-	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingproxy"
+	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingrule"
 )
 
-func findWebhooks(request *v1beta1.AdmissionRequest) []namespacedvalidatingproxy.WebhookConfig {
+func findWebhooks(request *v1beta1.AdmissionRequest) []namespacedvalidatingrule.WebhookConfig {
 	op := admv1beta1.OperationType(request.Operation)
 
-	return namespacedvalidatingproxy.EndpointData.Get(request.Namespace, request.Resource, op)
+	return namespacedvalidatingrule.EndpointData.Get(request.Namespace, request.Resource, op)
 }
 
 // code is inspired by k8s.io/apiserver/pkg/admission/plugin/webhook/validating/dispatcher.go
-func checkWebhooks(webhooks []namespacedvalidatingproxy.WebhookConfig, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
+func checkWebhooks(webhooks []namespacedvalidatingrule.WebhookConfig, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
 	if len(webhooks) == 0 {
 		return approved()
 	}
@@ -79,7 +79,7 @@ func checkWebhooks(webhooks []namespacedvalidatingproxy.WebhookConfig, r *http.R
 	return errToAdmissionResponse(errs[0])
 }
 
-func doWebhook(webhook namespacedvalidatingproxy.WebhookConfig, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
+func doWebhook(webhook namespacedvalidatingrule.WebhookConfig, wg *sync.WaitGroup, r *http.Request, body *bytes.Reader, errCh chan error) {
 	defer wg.Done()
 
 	url := serviceToUrl(webhook.ClientConfig.Service)

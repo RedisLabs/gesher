@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	namePrefix   = "proxy-validating-type"
+	namePrefix   = "namespaced-validating-type"
 	testGroup    = "TestGroup"
 	testVersion  = "TestVersion"
 	testResource = "TestResources"
@@ -38,14 +38,14 @@ const (
 
 var _ = Describe("TypeController", func() {
 	var (
-		pt *v1alpha1.ProxyValidatingType
+		pt *v1alpha1.NamespacedValidatingType
 	)
 	BeforeEach(func() {
-		pt = &v1alpha1.ProxyValidatingType{
+		pt = &v1alpha1.NamespacedValidatingType{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namePrefix,
 			},
-			Spec: v1alpha1.ProxyValidatingTypeSpec{
+			Spec: v1alpha1.NamespacedValidatingTypeSpec{
 				Types: []admissionv1beta1.RuleWithOperations{{
 					Operations: []admissionv1beta1.OperationType{op1},
 					Rule: admissionv1beta1.Rule{
@@ -59,13 +59,13 @@ var _ = Describe("TypeController", func() {
 	})
 
 	AfterEach(func() {
-		Expect(kubeClient.DeleteAllOf(context.TODO(), &v1alpha1.ProxyValidatingType{})).To(Succeed())
+		Expect(kubeClient.DeleteAllOf(context.TODO(), &v1alpha1.NamespacedValidatingType{})).To(Succeed())
 		Eventually(common.VerifyEmpty, 60, 5).Should(Succeed())
 	})
 
 	It("Adding a Single Custom Resource", func() {
 		pt1 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-1"
+		pt1.Name = "namespaced-validating-type-1"
 
 		By("Add resource 1")
 		Expect(kubeClient.Create(context.TODO(), pt1)).To(Succeed())
@@ -74,14 +74,14 @@ var _ = Describe("TypeController", func() {
 		Eventually(func() error { return common.VerifyApplied(pt1) }, 60, 5).Should(Succeed())
 
 		By("validate webhook")
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt1})).To(Succeed())
 	})
 
 	It("Adding Multiple Custom Resource", func() {
 		pt1 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-1"
+		pt1.Name = "namespaced-validating-type-1"
 		pt2 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-2"
+		pt1.Name = "namespaced-validating-type-2"
 
 		By("Add resource 1")
 		Expect(kubeClient.Create(context.TODO(), pt1)).To(Succeed())
@@ -94,12 +94,12 @@ var _ = Describe("TypeController", func() {
 		Eventually(func() error { return common.VerifyApplied(pt2) }, 60, 5).Should(Succeed())
 
 		By("validate webhook")
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1, pt2})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt1, pt2})).To(Succeed())
 	})
 
 	It("Modifying a Single Custom Resource", func() {
 		pt1 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-1"
+		pt1.Name = "namespaced-validating-type-1"
 
 		By("Add resouce 1")
 		Expect(kubeClient.Create(context.TODO(), pt1)).To(Succeed())
@@ -115,14 +115,14 @@ var _ = Describe("TypeController", func() {
 		Eventually(func() error { return common.VerifyApplied(pt1) }, 60, 5).Should(Succeed())
 
 		By("validate webhook")
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt1})).To(Succeed())
 	})
 
 	It("Adding a Duplicate Custom Resource", func() {
 		pt1 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-1"
+		pt1.Name = "namespaced-validating-type-1"
 		pt2 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-2"
+		pt1.Name = "namespaced-validating-type-2"
 
 		By("Add resouce 1")
 		Expect(kubeClient.Create(context.TODO(), pt1)).To(Succeed())
@@ -135,26 +135,26 @@ var _ = Describe("TypeController", func() {
 		Eventually(func() error { return common.VerifyApplied(pt2) }, 60, 5).Should(Succeed())
 
 		By("Validate webhook")
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1})).To(Succeed())
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt2})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt1})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt2})).To(Succeed())
 
 		By("Delete resouce 1")
 		Expect(kubeClient.Delete(context.TODO(), pt1)).To(Succeed())
 		Eventually(func() error { return common.VerifyDeleted(pt1) }, 60, 5).Should(Succeed())
 
 		By("validate webhook")
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt2})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt2})).To(Succeed())
 	})
 
 	It("Adding a Similar Custom Resource", func() {
 		By("Add resouce 1")
 		pt1 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-1"
+		pt1.Name = "namespaced-validating-type-1"
 		Expect(kubeClient.Create(context.TODO(), pt1)).To(Succeed())
 
 		By("Add resource 1a")
 		pt1a := pt.DeepCopy()
-		pt1a.Name = "proxy-validating-type-2"
+		pt1a.Name = "namespaced-validating-type-2"
 		pt1a.Spec.Types[0].Operations[0] = op2
 		Expect(kubeClient.Create(context.TODO(), pt1a)).To(Succeed())
 
@@ -163,19 +163,19 @@ var _ = Describe("TypeController", func() {
 		Eventually(func() error { return common.VerifyApplied(pt1a) }, 60, 5).Should(Succeed())
 
 		By("validate webhook")
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1})).To(Succeed())
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1a})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt1})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt1a})).To(Succeed())
 	})
 
 	It("Deleting a Similiar Custom Resource", func() {
 		By("Add resouce 1")
 		pt1 := pt.DeepCopy()
-		pt1.Name = "proxy-validating-type-1"
+		pt1.Name = "namespaced-validating-type-1"
 		Expect(kubeClient.Create(context.TODO(), pt1)).To(Succeed())
 
 		By("Add resource 1a")
 		pt1a := pt.DeepCopy()
-		pt1a.Name = "proxy-validating-type-2"
+		pt1a.Name = "namespaced-validating-type-2"
 		pt1a.Spec.Types[0].Operations[0] = op2
 		Expect(kubeClient.Create(context.TODO(), pt1a)).To(Succeed())
 
@@ -188,7 +188,7 @@ var _ = Describe("TypeController", func() {
 		Eventually(func() error { return common.VerifyDeleted(pt1) }, 60, 5).Should(Succeed())
 
 		By("validate webhook")
-		Expect(common.ValidateInWebhook([]*v1alpha1.ProxyValidatingType{pt1a})).To(Succeed())
-		Expect(common.ValidateNotInWebhook([]*v1alpha1.ProxyValidatingType{pt1})).To(Succeed())
+		Expect(common.ValidateInWebhook([]*v1alpha1.NamespacedValidatingType{pt1a})).To(Succeed())
+		Expect(common.ValidateNotInWebhook([]*v1alpha1.NamespacedValidatingType{pt1})).To(Succeed())
 	})
 })

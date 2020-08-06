@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proxyvalidatingtype
+package namespacedvalidatingtype
 
 import (
 	"github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
@@ -25,8 +25,8 @@ import (
 )
 
 type analyzedState struct {
-	customResource   *v1alpha1.ProxyValidatingType
-	newProxyTypeData *ProxyTypeData
+	customResource   *v1alpha1.NamespacedValidatingType
+	newNamespacedTypeData *NamespacedTypeData
 	webhook          *v1beta1.ValidatingWebhookConfiguration
 	create           bool
 	update           bool
@@ -36,22 +36,22 @@ type analyzedState struct {
 func analyze(observed *observedState, logger logr.Logger) (*analyzedState, error) {
 	state := &analyzedState{
 		customResource: observed.customResource,
-		newProxyTypeData: proxyTypeData,
+		newNamespacedTypeData: namespacedTypeData,
 	}
 
 	if state.customResource != nil {
 		switch observed.customResource.DeletionTimestamp.IsZero() {
 		case true:
 			logger.V(2).Info("DeletionTimeStamp is zero")
-			state.newProxyTypeData = proxyTypeData.Update(observed.customResource)
+			state.newNamespacedTypeData = namespacedTypeData.Update(observed.customResource)
 		case false:
 			logger.V(2).Info("DeletionTimeStamp is not zero, deleting")
-			state.newProxyTypeData = proxyTypeData.Delete(observed.customResource)
+			state.newNamespacedTypeData = namespacedTypeData.Delete(observed.customResource)
 			state.delete = true
 		}
 	}
 
-	webhook := state.newProxyTypeData.GenerateGlobalWebhook()
+	webhook := state.newNamespacedTypeData.GenerateGlobalWebhook()
 
 	// code is ugly to make sure we handle the instance being deleted out from under us
 	if webhooksDiffer(webhook, observed.clusterWebhook) {

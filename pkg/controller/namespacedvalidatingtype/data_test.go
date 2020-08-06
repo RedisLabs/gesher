@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proxyvalidatingtype
+package namespacedvalidatingtype
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -42,9 +42,9 @@ const (
 )
 
 var (
-	resource1 = &v1alpha1.ProxyValidatingType{
+	resource1 = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid1},
-		Spec: v1alpha1.ProxyValidatingTypeSpec{
+		Spec: v1alpha1.NamespacedValidatingTypeSpec{
 			Types: []v1beta1.RuleWithOperations{{
 				Operations: []v1beta1.OperationType{testOp1},
 				Rule: v1beta1.Rule{
@@ -55,9 +55,9 @@ var (
 			}},
 		},
 	}
-	resource1a = &v1alpha1.ProxyValidatingType{
+	resource1a = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid1},
-		Spec: v1alpha1.ProxyValidatingTypeSpec{
+		Spec: v1alpha1.NamespacedValidatingTypeSpec{
 			Types: []v1beta1.RuleWithOperations{{
 				Operations: []v1beta1.OperationType{testOp2},
 				Rule: v1beta1.Rule{
@@ -68,9 +68,9 @@ var (
 			}},
 		},
 	}
-	resource2 = &v1alpha1.ProxyValidatingType{
+	resource2 = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid2},
-		Spec: v1alpha1.ProxyValidatingTypeSpec{
+		Spec: v1alpha1.NamespacedValidatingTypeSpec{
 			Types: []v1beta1.RuleWithOperations{{
 				Operations: []v1beta1.OperationType{testOp1},
 				Rule: v1beta1.Rule{
@@ -81,9 +81,9 @@ var (
 			}},
 		},
 	}
-	resource2a = &v1alpha1.ProxyValidatingType{
+	resource2a = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid2},
-		Spec: v1alpha1.ProxyValidatingTypeSpec{
+		Spec: v1alpha1.NamespacedValidatingTypeSpec{
 			Types: []v1beta1.RuleWithOperations{{
 				Operations: []v1beta1.OperationType{testOp2},
 				Rule: v1beta1.Rule{
@@ -94,9 +94,9 @@ var (
 			}},
 		},
 	}
-	resource3 = &v1alpha1.ProxyValidatingType{
+	resource3 = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid3},
-		Spec: v1alpha1.ProxyValidatingTypeSpec{
+		Spec: v1alpha1.NamespacedValidatingTypeSpec{
 			Types: []v1beta1.RuleWithOperations{{
 				Operations: []v1beta1.OperationType{testOp1},
 				Rule: v1beta1.Rule{
@@ -110,9 +110,9 @@ var (
 )
 
 func TestAdd(t *testing.T) {
-	proxyTypeData = &ProxyTypeData{}
+	namespacedTypeData = &NamespacedTypeData{}
 
-	newP := proxyTypeData.Add(resource1)
+	newP := namespacedTypeData.Add(resource1)
 	versionMap, ok := newP.Mapping[testGroup1]
 	assert.True(t, ok)
 	assert.NotEmpty(t, versionMap)
@@ -132,9 +132,9 @@ func TestAdd(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	proxyTypeData = &ProxyTypeData{}
+	namespacedTypeData = &NamespacedTypeData{}
 
-	newP := proxyTypeData.Add(resource1)
+	newP := namespacedTypeData.Add(resource1)
 	newP = newP.Delete(resource1)
 
 	versionMap, ok := newP.Mapping[testGroup1]
@@ -155,8 +155,8 @@ func TestDelete(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	proxyTypeData = &ProxyTypeData{}
-	newP := proxyTypeData.Add(resource1)
+	namespacedTypeData = &NamespacedTypeData{}
+	newP := namespacedTypeData.Add(resource1)
 	newP = newP.Update(resource1a)
 
 	versionMap, ok := newP.Mapping[testGroup1]
@@ -182,8 +182,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestExist(t *testing.T) {
-	proxyTypeData = &ProxyTypeData{}
-	newP := proxyTypeData.Add(resource1)
+	namespacedTypeData = &NamespacedTypeData{}
+	newP := namespacedTypeData.Add(resource1)
 
 	gvk := &metav1.GroupVersionKind{
 		Group:   testGroup1,
@@ -207,12 +207,12 @@ func TestExist(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
-	proxyTypeData = &ProxyTypeData{}
-	proxyTypeData = proxyTypeData.Add(resource1)
-	proxyTypeData = proxyTypeData.Add(resource2a)
-	proxyTypeData = proxyTypeData.Add(resource3)
+	namespacedTypeData = &NamespacedTypeData{}
+	namespacedTypeData = namespacedTypeData.Add(resource1)
+	namespacedTypeData = namespacedTypeData.Add(resource2a)
+	namespacedTypeData = namespacedTypeData.Add(resource3)
 
-	config := proxyTypeData.GenerateGlobalWebhook()
+	config := namespacedTypeData.GenerateGlobalWebhook()
 	assert.True(t, len(config.Webhooks) == 1)
 	assert.True(t, len(config.Webhooks[0].Rules) == 2)
 

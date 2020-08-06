@@ -24,8 +24,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ProxyValidatingTypeSpec defines the desired state of ProxyValidatingType
-type ProxyValidatingTypeSpec struct {
+// NamespacedValidatingTypeSpec defines the desired state of NamespacedValidatingType
+type NamespacedValidatingTypeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
@@ -33,8 +33,8 @@ type ProxyValidatingTypeSpec struct {
 	Types []admissionv1beta1.RuleWithOperations `json:"types,omitempty" protobuf:"bytes,3,rep,name=types"`
 }
 
-// ProxyValidatingTypeStatus defines the observed state of ProxyValidatingType
-type ProxyValidatingTypeStatus struct {
+// NamespacedValidatingTypeStatus defines the observed state of NamespacedValidatingType
+type NamespacedValidatingTypeStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
@@ -44,30 +44,30 @@ type ProxyValidatingTypeStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ProxyValidatingType is the Schema for the proxyvalidatingtypes API
+// NamespacedValidatingType is the Schema for the namespacedvalidatingtypes API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=proxyvalidatingtypes,scope=Cluster
-type ProxyValidatingType struct {
+// +kubebuilder:resource:path=namespacedvalidatingtype,scope=Cluster
+type NamespacedValidatingType struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ProxyValidatingTypeSpec   `json:"spec,omitempty"`
-	Status ProxyValidatingTypeStatus `json:"status,omitempty"`
+	Spec   NamespacedValidatingTypeSpec   `json:"spec,omitempty"`
+	Status NamespacedValidatingTypeStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ProxyValidatingTypeList contains a list of ProxyValidatingType
-type ProxyValidatingTypeList struct {
+// NamespacedValidatingTypeList contains a list of NamespacedValidatingType
+type NamespacedValidatingTypeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ProxyValidatingType `json:"items"`
+	Items           []NamespacedValidatingType `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ProxyValidatingType{}, &ProxyValidatingTypeList{})
+	SchemeBuilder.Register(&NamespacedValidatingType{}, &NamespacedValidatingTypeList{})
 }
 
-func (pvt *ProxyValidatingType) GetObservedGeneration() int64 {
+func (pvt *NamespacedValidatingType) GetObservedGeneration() int64 {
 	return pvt.Status.ObservedGeneration
 }

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package namespacedvalidatingproxy
+package namespacedvalidatingrule
 
 import (
 	"bytes"
@@ -104,7 +104,7 @@ func (p *EndpointDataType) Get(namespace string, resource metav1.GroupVersionRes
 	return ret
 }
 
-func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingProxy) *EndpointDataType {
+func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingRule) *EndpointDataType {
 	newE := copyEndpointData(p)
 
 	if newE.Mapping == nil {
@@ -216,7 +216,7 @@ func copyEndpointData(p *EndpointDataType) *EndpointDataType {
 	return &newP
 }
 
-func (p *EndpointDataType) Delete(t *appv1alpha1.NamespacedValidatingProxy) *EndpointDataType {
+func (p *EndpointDataType) Delete(t *appv1alpha1.NamespacedValidatingRule) *EndpointDataType {
 	newE := copyEndpointData(p)
 
 	if groupMap, ok := newE.Mapping[t.Namespace]; ok {
@@ -234,7 +234,7 @@ func (p *EndpointDataType) Delete(t *appv1alpha1.NamespacedValidatingProxy) *End
 	return newE
 }
 
-func (p *EndpointDataType) Update(t *appv1alpha1.NamespacedValidatingProxy) *EndpointDataType {
+func (p *EndpointDataType) Update(t *appv1alpha1.NamespacedValidatingRule) *EndpointDataType {
 	newE := p.Delete(t)
 	newE = newE.Add(t)
 

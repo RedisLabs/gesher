@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proxyvalidatingtype
+package namespacedvalidatingtype
 
 import (
 	"bytes"
@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	proxyTypeData = &ProxyTypeData{}
+	namespacedTypeData = &NamespacedTypeData{}
 	caBundle      []byte
 )
 
@@ -39,11 +39,11 @@ type typeKindMap map[string]typeOpMap
 type typeVersionMap map[string]typeKindMap
 type typeGroupMap map[string]typeVersionMap
 
-type ProxyTypeData struct {
+type NamespacedTypeData struct {
 	Mapping typeGroupMap
 }
 
-func (p *ProxyTypeData) Exist(kind *metav1.GroupVersionKind, op v1beta1.OperationType) bool {
+func (p *NamespacedTypeData) Exist(kind *metav1.GroupVersionKind, op v1beta1.OperationType) bool {
 	groupList := []string{kind.Group, "*"}
 	var versionMapList []typeVersionMap
 	for _, group := range groupList {
@@ -86,8 +86,8 @@ func (p *ProxyTypeData) Exist(kind *metav1.GroupVersionKind, op v1beta1.Operatio
 	return false
 }
 
-func (p *ProxyTypeData) Add(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
-	newP := copyProxyTypeData(p)
+func (p *NamespacedTypeData) Add(t *appv1alpha1.NamespacedValidatingType) *NamespacedTypeData {
+	newP := copyNamespacedTypeData(p)
 
 	if newP.Mapping == nil {
 		newP.Mapping = make(typeGroupMap)
@@ -95,9 +95,9 @@ func (p *ProxyTypeData) Add(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
 
 	groupMap := newP.Mapping
 
-	for _, proxyType := range t.Spec.Types {
+	for _, namespacedType := range t.Spec.Types {
 		var versionMapList []typeVersionMap
-		for _, group := range proxyType.APIGroups {
+		for _, group := range namespacedType.APIGroups {
 			versionMap, ok := groupMap[group]
 			if !ok {
 				groupMap[group] = make(typeVersionMap)
@@ -107,7 +107,7 @@ func (p *ProxyTypeData) Add(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
 		}
 		var kindMapList []typeKindMap
 		for _, versionMap := range versionMapList {
-			for _, version := range proxyType.APIVersions {
+			for _, version := range namespacedType.APIVersions {
 				kindMap, ok := versionMap[version]
 				if !ok {
 					versionMap[version] = make(typeKindMap)
@@ -118,7 +118,7 @@ func (p *ProxyTypeData) Add(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
 		}
 		var opMapList []typeOpMap
 		for _, kindMap := range kindMapList {
-			for _, kind := range proxyType.Resources {
+			for _, kind := range namespacedType.Resources {
 				opMap, ok := kindMap[kind]
 				if !ok {
 					kindMap[kind] = make(typeOpMap)
@@ -129,7 +129,7 @@ func (p *ProxyTypeData) Add(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
 		}
 
 		for _, opMap := range opMapList {
-			for _, op := range proxyType.Operations {
+			for _, op := range namespacedType.Operations {
 				opMap[string(op)] = map[types.UID]bool{t.UID: true}
 			}
 		}
@@ -138,8 +138,8 @@ func (p *ProxyTypeData) Add(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
 	return newP
 }
 
-func copyProxyTypeData(p *ProxyTypeData) *ProxyTypeData {
-	var newP ProxyTypeData
+func copyNamespacedTypeData(p *NamespacedTypeData) *NamespacedTypeData {
+	var newP NamespacedTypeData
 
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
@@ -158,8 +158,8 @@ func copyProxyTypeData(p *ProxyTypeData) *ProxyTypeData {
 	return &newP
 }
 
-func (p *ProxyTypeData) Delete(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
-	newP := copyProxyTypeData(p)
+func (p *NamespacedTypeData) Delete(t *appv1alpha1.NamespacedValidatingType) *NamespacedTypeData {
+	newP := copyNamespacedTypeData(p)
 
 	for _, versionMap := range newP.Mapping {
 		for _, kindMap := range versionMap {
@@ -174,14 +174,14 @@ func (p *ProxyTypeData) Delete(t *appv1alpha1.ProxyValidatingType) *ProxyTypeDat
 	return newP
 }
 
-func (p *ProxyTypeData) Update(t *appv1alpha1.ProxyValidatingType) *ProxyTypeData {
+func (p *NamespacedTypeData) Update(t *appv1alpha1.NamespacedValidatingType) *NamespacedTypeData {
 	newP := p.Delete(t)
 	newP = newP.Add(t)
 
 	return newP
 }
 
-func (p *ProxyTypeData) GenerateGlobalWebhook() *v1beta1.ValidatingWebhookConfiguration {
+func (p *NamespacedTypeData) GenerateGlobalWebhook() *v1beta1.ValidatingWebhookConfiguration {
 	webhook := &v1beta1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{Name: ProxyWebhookName},
 	}
@@ -191,7 +191,7 @@ func (p *ProxyTypeData) GenerateGlobalWebhook() *v1beta1.ValidatingWebhookConfig
 	return webhook
 }
 
-func (p *ProxyTypeData) enumerateWebhooks() []v1beta1.ValidatingWebhook {
+func (p *NamespacedTypeData) enumerateWebhooks() []v1beta1.ValidatingWebhook {
 	var rules []v1beta1.RuleWithOperations
 
 	scope := v1beta1.NamespacedScope

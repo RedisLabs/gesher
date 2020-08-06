@@ -32,7 +32,7 @@ import (
 
 	"github.com/googleapis/gnostic/compiler"
 
-	"github.com/redislabs/gesher/pkg/controller/proxyvalidatingtype"
+	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingtype"
 	"k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -56,7 +56,7 @@ import (
 )
 
 const (
-	webhookResourceName = proxyvalidatingtype.ProxyWebhookName
+	webhookResourceName = namespacedvalidatingtype.ProxyWebhookName
 )
 
 type verifyDeletion interface {
@@ -109,12 +109,12 @@ func GetClient() (client.Client, kubernetes.Interface, error) {
 	return kubeClient, cl, nil
 }
 
-func LoadProxyValidatingTypeCRD() *apiextv1beta1.CustomResourceDefinition {
+func LoadNamespacedValidatingTypeCRD() *apiextv1beta1.CustomResourceDefinition {
 	By("Read and Load CRD")
 
 	c := &apiextv1beta1.CustomResourceDefinition{}
 
-	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_proxyvalidatingtypes_crd.yaml")
+	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_namespacedvalidatingtype_crd.yaml")
 	Expect(err).To(BeNil())
 	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(c)).To(Succeed())
 	Expect(kubeClient.Create(context.TODO(), c)).To(Succeed())
@@ -122,12 +122,12 @@ func LoadProxyValidatingTypeCRD() *apiextv1beta1.CustomResourceDefinition {
 	return c
 }
 
-func LoadNamespacedValidatingProxyCRD() *apiextv1beta1.CustomResourceDefinition {
+func LoadNamespacedValidatingRuleCRD() *apiextv1beta1.CustomResourceDefinition {
 	By("Read and Load CRD")
 
 	c := &apiextv1beta1.CustomResourceDefinition{}
 
-	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_namespacedvalidatingproxy_crd.yaml")
+	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_namespacedvalidatingrule_crd.yaml")
 	Expect(err).To(BeNil())
 	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(c)).To(Succeed())
 	Expect(kubeClient.Create(context.TODO(), c)).To(Succeed())
@@ -308,7 +308,7 @@ func VerifyDeleted(t verifyDeletion) error {
 	return nil
 }
 
-func ValidateInWebhook(ptList []*v1alpha1.ProxyValidatingType) error {
+func ValidateInWebhook(ptList []*v1alpha1.NamespacedValidatingType) error {
 	item := &v1beta1.ValidatingWebhookConfiguration{}
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: webhookResourceName}, item)
 	if err != nil {
@@ -320,7 +320,7 @@ func ValidateInWebhook(ptList []*v1alpha1.ProxyValidatingType) error {
 	}
 
 	for _, pt := range ptList {
-		if !proxyValidatingTypeExists(pt, item.Webhooks[0].Rules) {
+		if !namespacedValidatingTypeExists(pt, item.Webhooks[0].Rules) {
 			return fmt.Errorf("couldn't validate %+v in %+v", pt, item.Webhooks[0].Rules)
 		}
 	}
@@ -328,7 +328,7 @@ func ValidateInWebhook(ptList []*v1alpha1.ProxyValidatingType) error {
 	return nil
 }
 
-func ValidateNotInWebhook(ptList []*v1alpha1.ProxyValidatingType) error {
+func ValidateNotInWebhook(ptList []*v1alpha1.NamespacedValidatingType) error {
 	item := &v1beta1.ValidatingWebhookConfiguration{}
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: webhookResourceName}, item)
 	if err != nil {
@@ -340,7 +340,7 @@ func ValidateNotInWebhook(ptList []*v1alpha1.ProxyValidatingType) error {
 	}
 
 	for _, pt := range ptList {
-		if proxyValidatingTypeExists(pt, item.Webhooks[0].Rules) {
+		if namespacedValidatingTypeExists(pt, item.Webhooks[0].Rules) {
 			return fmt.Errorf("%+v still exists in %+v", pt, item.Webhooks[0].Rules)
 		}
 	}
@@ -348,7 +348,7 @@ func ValidateNotInWebhook(ptList []*v1alpha1.ProxyValidatingType) error {
 	return nil
 }
 
-func proxyValidatingTypeExists(pt *v1alpha1.ProxyValidatingType, rules []v1beta1.RuleWithOperations) bool {
+func namespacedValidatingTypeExists(pt *v1alpha1.NamespacedValidatingType, rules []v1beta1.RuleWithOperations) bool {
 	for _, pType := range pt.Spec.Types {
 		for _, group := range pType.APIGroups {
 			for _, version := range pType.APIVersions {

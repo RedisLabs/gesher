@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proxyvalidatingtype
+package namespacedvalidatingtype
 
 import (
 	"context"
@@ -30,17 +30,17 @@ import (
 )
 
 type observedState struct {
-	customResource *appv1alpha1.ProxyValidatingType
+	customResource *appv1alpha1.NamespacedValidatingType
 	clusterWebhook *v1beta1.ValidatingWebhookConfiguration
 }
 
 func observe(client client.Client, request reconcile.Request, logger logr.Logger) (*observedState, error) {
 	state := &observedState{
-		customResource: &appv1alpha1.ProxyValidatingType{},
+		customResource: &appv1alpha1.NamespacedValidatingType{},
 		clusterWebhook: &v1beta1.ValidatingWebhookConfiguration{},
 	}
 
-	// Fetch the ProxyValidatingType instance
+	// Fetch the NamespacedValidatingType instance
 	if request.Name != "" {
 		err := client.Get(context.TODO(), request.NamespacedName, state.customResource)
 		if err != nil {

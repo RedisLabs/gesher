@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package namespacedvalidatingproxy
+package namespacedvalidatingrule
 
 import (
 	"github.com/go-logr/logr"
@@ -23,7 +23,7 @@ import (
 )
 
 type analyzedState struct {
-	customResource *v1alpha1.NamespacedValidatingProxy
+	customResource *v1alpha1.NamespacedValidatingRule
 	newEndpointData *EndpointDataType
 	update bool
 	delete bool
