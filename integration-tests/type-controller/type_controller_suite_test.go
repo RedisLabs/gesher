@@ -58,8 +58,8 @@ var _ = BeforeSuite(func() {
 	kubeClient, _, err = common.GetClient()
 	Expect(err).To(Succeed())
 
-	crd1 = common.LoadProxyValidatingTypeCRD()
-	crd2 = common.LoadNamespacedValidatingProxyCRD()
+	crd1 = common.LoadNamespacedValidatingTypeCRD()
+	crd2 = common.LoadNamespacedValidatingRuleCRD()
 	service = common.LoadService()
 	sa = common.LoadServiceAccount()
 	role = common.LoadClusterRole()

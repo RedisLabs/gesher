@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package namespacedvalidatingproxy
+package namespacedvalidatingrule
 
 import (
 	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
@@ -28,9 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("controller_namespacedvalidatingproxy")
+var log = logf.Log.WithName("controller_namespacedvalidatingrule")
 
-// Add creates a new NamespacedValidatingProxy Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new NamespacedValidatingRule Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -38,19 +38,19 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileNamespacedValidatingProxy{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileNamespacedValidatingRule{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("namespacedvalidatingproxy-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("namespacedvalidatingrule-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource NamespacedValidatingProxy
-	err = c.Watch(&source.Kind{Type: &appv1alpha1.NamespacedValidatingProxy{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource NamespacedValidatingRule
+	err = c.Watch(&source.Kind{Type: &appv1alpha1.NamespacedValidatingRule{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -58,25 +58,25 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileNamespacedValidatingProxy implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileNamespacedValidatingProxy{}
+// blank assignment to verify that ReconcileNamespacedValidatingRule implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileNamespacedValidatingRule{}
 
-// ReconcileNamespacedValidatingProxy reconciles a NamespacedValidatingProxy object
-type ReconcileNamespacedValidatingProxy struct {
+// ReconcileNamespacedValidatingRule reconciles a NamespacedValidatingRule object
+type ReconcileNamespacedValidatingRule struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a NamespacedValidatingProxy object and makes changes based on the state read
-// and what is in the NamespacedValidatingProxy.Spec
+// Reconcile reads that state of the cluster for a NamespacedValidatingRule object and makes changes based on the state read
+// and what is in the NamespacedValidatingRule.Spec
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileNamespacedValidatingProxy) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileNamespacedValidatingRule) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.V(1).Info("Reconciling NamespacedValidatingProxy")
+	reqLogger.V(1).Info("Reconciling NamespacedValidatingRule")
 
 	observedState, err := observe(r.client, request, reqLogger)
 	if err != nil {

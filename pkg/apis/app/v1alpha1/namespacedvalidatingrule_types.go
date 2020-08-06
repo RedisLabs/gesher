@@ -25,8 +25,8 @@ import (
 // Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
 
-// NamespacedValidatingProxySpec defines the desired state of NamespacedValidatingProxy
-type NamespacedValidatingProxySpec struct {
+// NamespacedValidatingRuleSpec defines the desired state of NamespacedValidatingRule
+type NamespacedValidatingRuleSpec struct {
 	// Webhooks is a list of webhooks and the affected resources and operations.
 	// +optional
 	// +patchMergeKey=name
@@ -34,37 +34,37 @@ type NamespacedValidatingProxySpec struct {
 	Webhooks []v1beta1.ValidatingWebhook `json:"webhooks,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,2,rep,name=Webhooks"`
 }
 
-// NamespacedValidatingProxyStatus defines the observed state of NamespacedValidatingProxy
-type NamespacedValidatingProxyStatus struct {
+// NamespacedValidatingRuleStatus defines the observed state of NamespacedValidatingRule
+type NamespacedValidatingRuleStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// NamespacedValidatingProxy is the Schema for the namespacedvalidatingproxy API
+// NamespacedValidatingRule is the Schema for the namespacedvalidatingrule API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=namespacedvalidatingproxy,scope=Namespaced
-type NamespacedValidatingProxy struct {
+// +kubebuilder:resource:path=namespacedvalidatingrule,scope=Namespaced
+type NamespacedValidatingRule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NamespacedValidatingProxySpec   `json:"spec,omitempty"`
-	Status NamespacedValidatingProxyStatus `json:"status,omitempty"`
+	Spec   NamespacedValidatingRuleSpec   `json:"spec,omitempty"`
+	Status NamespacedValidatingRuleStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// NamespacedValidatingProxyList contains a list of NamespacedValidatingProxy
-type NamespacedValidatingProxyList struct {
+// NamespacedValidatingRuleyList contains a list of NamespacedValidatingRule
+type NamespacedValidatingRuleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []NamespacedValidatingProxy `json:"items"`
+	Items           []NamespacedValidatingRule `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&NamespacedValidatingProxy{}, &NamespacedValidatingProxyList{})
+	SchemeBuilder.Register(&NamespacedValidatingRule{}, &NamespacedValidatingRuleList{})
 }
 
-func (nvp *NamespacedValidatingProxy) GetObservedGeneration() int64 {
+func (nvp *NamespacedValidatingRule) GetObservedGeneration() int64 {
 	return nvp.Status.ObservedGeneration
 }

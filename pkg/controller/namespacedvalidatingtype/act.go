@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proxyvalidatingtype
+package namespacedvalidatingtype
 
 import (
 	"context"
@@ -66,7 +66,7 @@ func act(c client.Client, state *analyzedState, logger logr.Logger) error {
 		}
 	}
 
-	proxyTypeData = state.newProxyTypeData
+	namespacedTypeData = state.newNamespacedTypeData
 
 	return nil
 }

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package namespacedvalidatingproxy
+package namespacedvalidatingrule
 
 import (
 	"context"
@@ -25,12 +25,12 @@ import (
 )
 
 type observeState struct {
-	customResource *v1alpha1.NamespacedValidatingProxy
+	customResource *v1alpha1.NamespacedValidatingRule
 }
 
 func observe(kubeClient client.Client, request reconcile.Request, logger logr.Logger) (*observeState, error) {
 	ret := &observeState{
-		customResource: &v1alpha1.NamespacedValidatingProxy{},
+		customResource: &v1alpha1.NamespacedValidatingRule{},
 	}
 
 	err := kubeClient.Get(context.TODO(), request.NamespacedName, ret.customResource)

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package namespacedvalidatingproxy
+package namespacedvalidatingrule
 
 import (
 	"testing"
@@ -41,12 +41,12 @@ const (
 )
 
 var (
-	resource1 = &v1alpha1.NamespacedValidatingProxy{
+	resource1 = &v1alpha1.NamespacedValidatingRule{
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       uid1,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.NamespacedValidatingProxySpec{
+		Spec: v1alpha1.NamespacedValidatingRuleSpec{
 			Webhooks: []v1beta1.ValidatingWebhook{{
 				Name:         "resource1",
 				ClientConfig: v1beta1.WebhookClientConfig{},
@@ -62,12 +62,12 @@ var (
 		},
 	}
 
-	resource1a = &v1alpha1.NamespacedValidatingProxy{
+	resource1a = &v1alpha1.NamespacedValidatingRule{
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       uid1,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.NamespacedValidatingProxySpec{
+		Spec: v1alpha1.NamespacedValidatingRuleSpec{
 			Webhooks: []v1beta1.ValidatingWebhook{{
 				Name:         "resource1",
 				ClientConfig: v1beta1.WebhookClientConfig{},
@@ -83,12 +83,12 @@ var (
 		},
 	}
 
-	resource2 = &v1alpha1.NamespacedValidatingProxy{
+	resource2 = &v1alpha1.NamespacedValidatingRule{
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       uid2,
 			Namespace: namespace,
 		},
-		Spec: v1alpha1.NamespacedValidatingProxySpec{
+		Spec: v1alpha1.NamespacedValidatingRuleSpec{
 			Webhooks: []v1beta1.ValidatingWebhook{{
 				Name: "resource2",
 				ClientConfig: v1beta1.WebhookClientConfig{

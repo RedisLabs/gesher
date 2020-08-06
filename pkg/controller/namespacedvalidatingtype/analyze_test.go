@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package proxyvalidatingtype
+package namespacedvalidatingtype
 
 import (
 	"testing"
@@ -49,10 +49,10 @@ var (
 )
 
 func TestAnalyzeSame(t *testing.T) {
-	proxyTypeData := &ProxyTypeData{}
-	customResource := &appv1alpha1.ProxyValidatingType{
+	namespacedTypeData := &NamespacedTypeData{}
+	customResource := &appv1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid},
-		Spec: appv1alpha1.ProxyValidatingTypeSpec{
+		Spec: appv1alpha1.NamespacedValidatingTypeSpec{
 			Types: []v1beta1.RuleWithOperations{{
 				Operations: []v1beta1.OperationType{testOp},
 				Rule:       rule,
@@ -60,8 +60,8 @@ func TestAnalyzeSame(t *testing.T) {
 		},
 	}
 
-	proxyTypeData = proxyTypeData.Add(customResource)
-	webhook := proxyTypeData.GenerateGlobalWebhook()
+	namespacedTypeData = namespacedTypeData.Add(customResource)
+	webhook := namespacedTypeData.GenerateGlobalWebhook()
 
 	observed := &observedState{
 		customResource: customResource,
@@ -74,10 +74,10 @@ func TestAnalyzeSame(t *testing.T) {
 }
 
 func TestAnalyzeDifferent(t *testing.T) {
-	proxyTypeData := &ProxyTypeData{}
-	customResource := &appv1alpha1.ProxyValidatingType{
+	namespacedTypeData := &NamespacedTypeData{}
+	customResource := &appv1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid},
-		Spec: appv1alpha1.ProxyValidatingTypeSpec{
+		Spec: appv1alpha1.NamespacedValidatingTypeSpec{
 			Types: []v1beta1.RuleWithOperations{{
 				Operations: []v1beta1.OperationType{testOp},
 				Rule:       rule,
@@ -85,8 +85,8 @@ func TestAnalyzeDifferent(t *testing.T) {
 		},
 	}
 
-	proxyTypeData = proxyTypeData.Add(customResource)
-	webhook := proxyTypeData.GenerateGlobalWebhook()
+	namespacedTypeData = namespacedTypeData.Add(customResource)
+	webhook := namespacedTypeData.GenerateGlobalWebhook()
 	customResource.Spec.Types[0].Operations[0] = testDiffOp
 
 	observed := &observedState{

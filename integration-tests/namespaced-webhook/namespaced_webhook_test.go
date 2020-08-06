@@ -35,8 +35,8 @@ import (
 var _ = Describe("NamespacedWebhook", func() {
 	var (
 		pod       *corev1.Pod
-		proxyType *v1alpha1.ProxyValidatingType
-		webhook   *v1alpha1.NamespacedValidatingProxy
+		namespacedType *v1alpha1.NamespacedValidatingType
+		webhook   *v1alpha1.NamespacedValidatingRule
 	)
 
 	AfterEach(func() {
@@ -49,10 +49,10 @@ var _ = Describe("NamespacedWebhook", func() {
 			pod = nil
 		}
 
-		if proxyType != nil {
-			Expect(kubeClient.Delete(context.TODO(), proxyType)).To(Succeed())
-			Eventually(func () error { return common.VerifyDeleted(proxyType)}, 60, 5).Should(Succeed())
-			proxyType = nil
+		if namespacedType != nil {
+			Expect(kubeClient.Delete(context.TODO(), namespacedType)).To(Succeed())
+			Eventually(func () error { return common.VerifyDeleted(namespacedType)}, 60, 5).Should(Succeed())
+			namespacedType = nil
 		}
 
 		if webhook != nil {
@@ -67,20 +67,20 @@ var _ = Describe("NamespacedWebhook", func() {
 		}
 	})
 
-	It("Create Pod without ProxyType", func() {
+	It("Create Pod without NamespacedType", func() {
 		pod = getPod(false)
 		tryCreatePod(&pod, true, true)
 	})
 
-	It("Create Pod with ProxyType, but without Namespaced Webhook", func() {
-		proxyType = createProxyType()
+	It("Create Pod with NamespacedType, but without Namespaced Rule", func() {
+		namespacedType = createNamespacedType()
 
 		pod = getPod(false)
 		tryCreatePod(&pod, true, true)
 	})
 
 	It("Create Pod with Namespaced Webhook, without label", func() {
-		proxyType = createProxyType()
+		namespacedType = createNamespacedType()
 		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
 
 		pod = getPod(false)
@@ -88,7 +88,7 @@ var _ = Describe("NamespacedWebhook", func() {
 	})
 
 	It("Create Pod with Namespaced Webhook, with label", func() {
-		proxyType = createProxyType()
+		namespacedType = createNamespacedType()
 		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
 
 		pod = getPod(true)
@@ -96,7 +96,7 @@ var _ = Describe("NamespacedWebhook", func() {
 	})
 
 	It("Create Pod after delete Namespaced Webhook, without label", func() {
-		proxyType = createProxyType()
+		namespacedType = createNamespacedType()
 		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
 		webhook = deleteNamespacedWebhook(webhook)
 
@@ -105,7 +105,7 @@ var _ = Describe("NamespacedWebhook", func() {
 	})
 
 	It("Test with Ignore Failure type if admission controller is removed", func() {
-		proxyType = createProxyType()
+		namespacedType = createNamespacedType()
 		webhook = createNamespacedWebhook(admissionv1beta1.Ignore)
 
 		Expect(kubeClient.Delete(context.TODO(), admDeploy)).To(Succeed())
@@ -117,7 +117,7 @@ var _ = Describe("NamespacedWebhook", func() {
 	})
 
 	It("Test with Fail Failure type if admission controller is removed", func() {
-		proxyType = createProxyType()
+		namespacedType = createNamespacedType()
 		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
 
 		Expect(kubeClient.Delete(context.TODO(), admDeploy)).To(Succeed())
@@ -130,13 +130,13 @@ var _ = Describe("NamespacedWebhook", func() {
 })
 
 
-func createProxyType() *v1alpha1.ProxyValidatingType {
-	By("Add ProxyValidatingType")
-	pt := &v1alpha1.ProxyValidatingType{
+func createNamespacedType() *v1alpha1.NamespacedValidatingType {
+	By("Add NamespacedValidatingType")
+	pt := &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "gesher-test",
 		},
-		Spec: v1alpha1.ProxyValidatingTypeSpec{
+		Spec: v1alpha1.NamespacedValidatingTypeSpec{
 			Types: []admissionv1beta1.RuleWithOperations{{
 				Operations: []admissionv1beta1.OperationType{"CREATE"},
 				Rule: admissionv1beta1.Rule{
@@ -206,16 +206,16 @@ func tryCreatePod(pod **corev1.Pod, success bool, available bool) {
 	}
 }
 
-func createNamespacedWebhook(failurePolicy admissionv1beta1.FailurePolicyType) *v1alpha1.NamespacedValidatingProxy {
-	By("Add NamespacedValidatingProxy")
+func createNamespacedWebhook(failurePolicy admissionv1beta1.FailurePolicyType) *v1alpha1.NamespacedValidatingRule {
+	By("Add NamespacedValidatingRule")
 	path := "/admission"
 
-	nvp := &v1alpha1.NamespacedValidatingProxy{
+	nvp := &v1alpha1.NamespacedValidatingRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-hook",
 			Namespace: common.Namespace,
 		},
-		Spec: v1alpha1.NamespacedValidatingProxySpec{
+		Spec: v1alpha1.NamespacedValidatingRuleSpec{
 			Webhooks: []admissionv1beta1.ValidatingWebhook{
 				{
 					Name:                    "test-hook",
@@ -252,7 +252,7 @@ func createNamespacedWebhook(failurePolicy admissionv1beta1.FailurePolicyType) *
 	return nvp
 }
 
-func deleteNamespacedWebhook(nvp *v1alpha1.NamespacedValidatingProxy) *v1alpha1.NamespacedValidatingProxy {
+func deleteNamespacedWebhook(nvp *v1alpha1.NamespacedValidatingRule) *v1alpha1.NamespacedValidatingRule {
 	Expect(kubeClient.Delete(context.TODO(), nvp)).To(Succeed())
 	Eventually(func() error { return common.VerifyDeleted(nvp) }, 60, 5).Should(Succeed())
 
