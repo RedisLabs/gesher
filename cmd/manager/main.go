@@ -22,14 +22,20 @@ import (
 	"flag"
 	"fmt"
 	"github.com/redislabs/gesher/cmd/manager/flags"
+	"github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
 	"github.com/redislabs/gesher/pkg/common"
+	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingrule"
+	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingtype"
 	"github.com/redislabs/gesher/pkg/tls_manager"
 	"io/ioutil"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -155,6 +161,11 @@ func main() {
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := initData(); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
@@ -291,4 +302,60 @@ func setupTLS(cfg *rest.Config) error {
 	}
 
 	return nil
+}
+
+func initData() error {
+	kubeClient, err := getClient()
+	if err != nil {
+		return err
+	}
+
+	typeList := &v1alpha1.NamespacedValidatingTypeList{}
+	err = kubeClient.List(context.TODO(), typeList)
+	if err != nil {
+		return err
+	}
+
+	typeData := namespacedvalidatingtype.TypeData
+	for _, i := range typeList.Items {
+		typeData = typeData.Add(&i)
+	}
+	namespacedvalidatingtype.TypeData = typeData
+
+	ruleList := &v1alpha1.NamespacedValidatingRuleList{}
+	err = kubeClient.List(context.TODO(), ruleList, client.InNamespace(*flags.Namespace))
+	if err != nil {
+		return err
+	}
+
+	ruleData := namespacedvalidatingrule.EndpointData
+	for _, i := range ruleList.Items {
+		ruleData.Add(&i)
+	}
+	namespacedvalidatingrule.EndpointData = ruleData
+
+	return nil
+}
+
+func getClient() (client.Client, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	err = apis.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeClient, err := client.New(cfg, client.Options{Scheme: scheme.Scheme, Mapper: mapper})
+	if err != nil {
+		return nil, err
+	}
+	return kubeClient, nil
 }

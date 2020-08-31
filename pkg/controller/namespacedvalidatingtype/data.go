@@ -29,8 +29,8 @@ import (
 )
 
 var (
-	namespacedTypeData = &NamespacedTypeData{}
-	caBundle      []byte
+	TypeData = &NamespacedTypeData{}
+	caBundle []byte
 )
 
 type typeInstanceMap map[types.UID]bool

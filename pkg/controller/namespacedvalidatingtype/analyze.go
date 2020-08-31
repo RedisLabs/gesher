@@ -35,18 +35,18 @@ type analyzedState struct {
 
 func analyze(observed *observedState, logger logr.Logger) (*analyzedState, error) {
 	state := &analyzedState{
-		customResource: observed.customResource,
-		newNamespacedTypeData: namespacedTypeData,
+		customResource:        observed.customResource,
+		newNamespacedTypeData: TypeData,
 	}
 
 	if state.customResource != nil {
 		switch observed.customResource.DeletionTimestamp.IsZero() {
 		case true:
 			logger.V(2).Info("DeletionTimeStamp is zero")
-			state.newNamespacedTypeData = namespacedTypeData.Update(observed.customResource)
+			state.newNamespacedTypeData = TypeData.Update(observed.customResource)
 		case false:
 			logger.V(2).Info("DeletionTimeStamp is not zero, deleting")
-			state.newNamespacedTypeData = namespacedTypeData.Delete(observed.customResource)
+			state.newNamespacedTypeData = TypeData.Delete(observed.customResource)
 			state.delete = true
 		}
 	}

@@ -66,7 +66,7 @@ func act(c client.Client, state *analyzedState, logger logr.Logger) error {
 		}
 	}
 
-	namespacedTypeData = state.newNamespacedTypeData
+	TypeData = state.newNamespacedTypeData
 
 	return nil
 }

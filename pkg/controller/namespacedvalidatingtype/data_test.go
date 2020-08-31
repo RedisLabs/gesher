@@ -110,9 +110,9 @@ var (
 )
 
 func TestAdd(t *testing.T) {
-	namespacedTypeData = &NamespacedTypeData{}
+	TypeData = &NamespacedTypeData{}
 
-	newP := namespacedTypeData.Add(resource1)
+	newP := TypeData.Add(resource1)
 	versionMap, ok := newP.Mapping[testGroup1]
 	assert.True(t, ok)
 	assert.NotEmpty(t, versionMap)
@@ -132,9 +132,9 @@ func TestAdd(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	namespacedTypeData = &NamespacedTypeData{}
+	TypeData = &NamespacedTypeData{}
 
-	newP := namespacedTypeData.Add(resource1)
+	newP := TypeData.Add(resource1)
 	newP = newP.Delete(resource1)
 
 	versionMap, ok := newP.Mapping[testGroup1]
@@ -155,8 +155,8 @@ func TestDelete(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	namespacedTypeData = &NamespacedTypeData{}
-	newP := namespacedTypeData.Add(resource1)
+	TypeData = &NamespacedTypeData{}
+	newP := TypeData.Add(resource1)
 	newP = newP.Update(resource1a)
 
 	versionMap, ok := newP.Mapping[testGroup1]
@@ -182,8 +182,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestExist(t *testing.T) {
-	namespacedTypeData = &NamespacedTypeData{}
-	newP := namespacedTypeData.Add(resource1)
+	TypeData = &NamespacedTypeData{}
+	newP := TypeData.Add(resource1)
 
 	gvk := &metav1.GroupVersionKind{
 		Group:   testGroup1,
@@ -207,12 +207,12 @@ func TestExist(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
-	namespacedTypeData = &NamespacedTypeData{}
-	namespacedTypeData = namespacedTypeData.Add(resource1)
-	namespacedTypeData = namespacedTypeData.Add(resource2a)
-	namespacedTypeData = namespacedTypeData.Add(resource3)
+	TypeData = &NamespacedTypeData{}
+	TypeData = TypeData.Add(resource1)
+	TypeData = TypeData.Add(resource2a)
+	TypeData = TypeData.Add(resource3)
 
-	config := namespacedTypeData.GenerateGlobalWebhook()
+	config := TypeData.GenerateGlobalWebhook()
 	assert.True(t, len(config.Webhooks) == 1)
 	assert.True(t, len(config.Webhooks[0].Rules) == 2)
 

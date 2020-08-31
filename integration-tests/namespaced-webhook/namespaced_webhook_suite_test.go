@@ -80,6 +80,8 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	return 
+
 	if opDeploy != nil {
 		Expect(kubeClient.Delete(context.TODO(), opDeploy)).To(Succeed())
 		opDeploy = nil
@@ -136,4 +138,3 @@ var _ = AfterSuite(func() {
 		admSecret = nil
 	}
 })
-
