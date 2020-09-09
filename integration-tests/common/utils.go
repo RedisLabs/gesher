@@ -149,12 +149,40 @@ func LoadServiceAccount() *v1.ServiceAccount {
 	return sa
 }
 
-func LoadClusterRole() *rbacv1beta1.ClusterRole {
+func LoadRole() *rbacv1beta1.Role {
 	By("Read and Load Role")
+
+	role := &rbacv1beta1.Role{}
+
+	data, err := ioutil.ReadFile("../../deploy/role.yaml")
+	Expect(err).To(BeNil())
+	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(role)).To(Succeed())
+	role.Namespace = Namespace
+	Expect(kubeClient.Create(context.TODO(), role)).To(Succeed())
+
+	return role
+}
+
+func LoadRoleBinding() *rbacv1beta1.RoleBinding {
+	By("Read and Load RoleBinding")
+
+	roleBinding := &rbacv1beta1.RoleBinding{}
+
+	data, err := ioutil.ReadFile("../../deploy/role_binding.yaml")
+	Expect(err).To(BeNil())
+	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(roleBinding)).To(Succeed())
+	roleBinding.Namespace = Namespace
+	Expect(kubeClient.Create(context.TODO(), roleBinding)).To(Succeed())
+
+	return roleBinding
+}
+
+func LoadClusterRole() *rbacv1beta1.ClusterRole {
+	By("Read and Load ClusterRole")
 
 	role := &rbacv1beta1.ClusterRole{}
 
-	data, err := ioutil.ReadFile("../../deploy/role.yaml")
+	data, err := ioutil.ReadFile("../../deploy/cluster_role.yaml")
 	Expect(err).To(BeNil())
 	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(role)).To(Succeed())
 	Expect(kubeClient.Create(context.TODO(), role)).To(Succeed())
@@ -167,9 +195,10 @@ func LoadClusterRoleBinding() *rbacv1beta1.ClusterRoleBinding {
 
 	roleBinding := &rbacv1beta1.ClusterRoleBinding{}
 
-	data, err := ioutil.ReadFile("../../deploy/role_binding.yaml")
+	data, err := ioutil.ReadFile("../../deploy/cluster_role_binding.yaml")
 	Expect(err).To(BeNil())
 	Expect(yaml.NewYAMLToJSONDecoder(bytes.NewReader(data)).Decode(roleBinding)).To(Succeed())
+	roleBinding.Subjects[0].Namespace = Namespace
 	Expect(kubeClient.Create(context.TODO(), roleBinding)).To(Succeed())
 
 	return roleBinding

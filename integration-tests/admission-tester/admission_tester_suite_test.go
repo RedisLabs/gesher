@@ -39,9 +39,11 @@ func TestAdmissionTester(t *testing.T) {
 }
 
 var (
-	sa          *corev1.ServiceAccount
-	role        *rbacv1beta1.ClusterRole
-	roleBinding *rbacv1beta1.ClusterRoleBinding
+	sa                 *corev1.ServiceAccount
+	role               *rbacv1beta1.Role
+	roleBinding        *rbacv1beta1.RoleBinding
+	clusterRole        *rbacv1beta1.ClusterRole
+	clusterRoleBinding *rbacv1beta1.ClusterRoleBinding
 
 	webhook *v1beta1.ValidatingWebhookConfiguration
 	service *corev1.Service
@@ -57,8 +59,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(Succeed())
 
 	sa = common.LoadServiceAccount()
-	role = common.LoadClusterRole()
-	roleBinding = common.LoadClusterRoleBinding()
+	role = common.LoadRole()
+	roleBinding = common.LoadRoleBinding()
+	clusterRole = common.LoadClusterRole()
+	clusterRoleBinding = common.LoadClusterRoleBinding()
 
 	service = common.LoadTestService()
 	deploy = common.LoadAdmissionDeploy()
@@ -90,6 +94,14 @@ var _ = AfterSuite(func() {
 	if sa != nil {
 		Expect(kubeClient.Delete(context.TODO(), sa)).To(Succeed())
 		sa = nil
+	}
+	if clusterRole != nil {
+		Expect(kubeClient.Delete(context.TODO(), clusterRole)).To(Succeed())
+		clusterRole = nil
+	}
+	if clusterRoleBinding != nil {
+		Expect(kubeClient.Delete(context.TODO(), clusterRoleBinding)).To(Succeed())
+		clusterRoleBinding = nil
 	}
 	if role != nil {
 		Expect(kubeClient.Delete(context.TODO(), role)).To(Succeed())

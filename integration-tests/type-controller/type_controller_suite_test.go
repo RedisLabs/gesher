@@ -39,14 +39,16 @@ func TestTypeController(t *testing.T) {
 }
 
 var (
-	crd1        *v1beta1.CustomResourceDefinition
-	crd2        *v1beta1.CustomResourceDefinition
-	deploy      *appsv1.Deployment
-	sa          *corev1.ServiceAccount
-	service     *corev1.Service
-	role        *rbacv1beta1.ClusterRole
-	roleBinding *rbacv1beta1.ClusterRoleBinding
-	secret      *corev1.Secret
+	crd1               *v1beta1.CustomResourceDefinition
+	crd2               *v1beta1.CustomResourceDefinition
+	deploy             *appsv1.Deployment
+	sa                 *corev1.ServiceAccount
+	service            *corev1.Service
+	role               *rbacv1beta1.Role
+	roleBinding        *rbacv1beta1.RoleBinding
+	clusterRole        *rbacv1beta1.ClusterRole
+	clusterRoleBinding *rbacv1beta1.ClusterRoleBinding
+	secret             *corev1.Secret
 
 	kubeClient client.Client
 )
@@ -62,8 +64,10 @@ var _ = BeforeSuite(func() {
 	crd2 = common.LoadNamespacedValidatingRuleCRD()
 	service = common.LoadService()
 	sa = common.LoadServiceAccount()
-	role = common.LoadClusterRole()
-	roleBinding = common.LoadClusterRoleBinding()
+	role = common.LoadRole()
+	roleBinding = common.LoadRoleBinding()
+	clusterRole = common.LoadClusterRole()
+	clusterRoleBinding = common.LoadClusterRoleBinding()
 	deploy = common.LoadOperator("Read and Load Operator")
 
 	var s corev1.Secret
@@ -97,6 +101,16 @@ var _ = AfterSuite(func() {
 	if sa != nil {
 		Expect(kubeClient.Delete(context.TODO(), sa)).To(Succeed())
 		sa = nil
+	}
+
+	if clusterRole != nil {
+		Expect(kubeClient.Delete(context.TODO(), clusterRole)).To(Succeed())
+		clusterRole = nil
+	}
+
+	if clusterRoleBinding != nil {
+		Expect(kubeClient.Delete(context.TODO(), clusterRoleBinding)).To(Succeed())
+		clusterRoleBinding = nil
 	}
 
 	if role != nil {
