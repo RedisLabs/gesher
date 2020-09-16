@@ -37,17 +37,19 @@ func TestNamespacedWebhook(t *testing.T) {
 }
 
 var (
-	crd1        *v1beta1.CustomResourceDefinition
-	crd2        *v1beta1.CustomResourceDefinition
-	opDeploy    *appsv1.Deployment
-	admDeploy   *appsv1.Deployment
-	sa          *corev1.ServiceAccount
-	opService   *corev1.Service
-	admService  *corev1.Service
-	role        *rbacv1beta1.ClusterRole
-	roleBinding *rbacv1beta1.ClusterRoleBinding
-	opSecret    *corev1.Secret
-	admSecret   *corev1.Secret
+	crd1               *v1beta1.CustomResourceDefinition
+	crd2               *v1beta1.CustomResourceDefinition
+	opDeploy           *appsv1.Deployment
+	admDeploy          *appsv1.Deployment
+	sa                 *corev1.ServiceAccount
+	opService          *corev1.Service
+	admService         *corev1.Service
+	role			   *rbacv1beta1.Role
+	roleBinding        *rbacv1beta1.RoleBinding
+	clusterRole        *rbacv1beta1.ClusterRole
+	clusterRoleBinding *rbacv1beta1.ClusterRoleBinding
+	opSecret           *corev1.Secret
+	admSecret          *corev1.Secret
 
 	kubeClient client.Client
 )
@@ -65,8 +67,10 @@ var _ = BeforeSuite(func() {
 	admService = common.LoadTestService()
 
 	sa = common.LoadServiceAccount()
-	role = common.LoadClusterRole()
-	roleBinding = common.LoadClusterRoleBinding()
+	role = common.LoadRole()
+	roleBinding = common.LoadRoleBinding()
+	clusterRole = common.LoadClusterRole()
+	clusterRoleBinding = common.LoadClusterRoleBinding()
 	opDeploy = common.LoadOperator("Read and Load Operator")
 	admDeploy = common.LoadAdmissionDeploy()
 
@@ -119,6 +123,16 @@ var _ = AfterSuite(func() {
 	if roleBinding != nil {
 		Expect(kubeClient.Delete(context.TODO(), roleBinding)).To(Succeed())
 		roleBinding = nil
+	}
+
+	if clusterRole != nil {
+		Expect(kubeClient.Delete(context.TODO(), clusterRole)).To(Succeed())
+		clusterRole = nil
+	}
+
+	if clusterRoleBinding != nil {
+		Expect(kubeClient.Delete(context.TODO(), clusterRoleBinding)).To(Succeed())
+		clusterRoleBinding = nil
 	}
 
 	if opSecret != nil {

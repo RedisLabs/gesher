@@ -53,16 +53,17 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The AdmissionReview that will be returned
 	responseAdmissionReview := v1beta1.AdmissionReview{}
 
-	log.V(2).Info(fmt.Sprintf("%v %v", requestedAdmissionReview, responseAdmissionReview))
-
 	deserializer := apiserver.Codecs.UniversalDeserializer()
 
 	if _, _, err := deserializer.Decode(body, nil, &requestedAdmissionReview); err != nil {
 		log.Error(err, "deserializer failed")
 		responseAdmissionReview.Response = errToAdmissionResponse(err)
 	} else {
+		log.V(2).Info(fmt.Sprintf("request = %+v", requestedAdmissionReview))
 		webhooks := findWebhooks(requestedAdmissionReview.Request)
+		log.V(2).Info(fmt.Sprintf("webhooks = %+v", webhooks))
 		responseAdmissionReview.Response = checkWebhooks(webhooks, r, bytes.NewReader(body))
+		log.V(2).Info(fmt.Sprintf("response = %+v", responseAdmissionReview.Response))
 	}
 
 	// Return the same UID
