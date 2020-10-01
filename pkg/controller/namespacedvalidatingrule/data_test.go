@@ -106,6 +106,31 @@ var (
 			}},
 		},
 	}
+
+	resource3 = &v1alpha1.NamespacedValidatingRule{
+		ObjectMeta: metav1.ObjectMeta{
+			UID:       uid2,
+			Namespace: namespace,
+		},
+		Spec: v1alpha1.NamespacedValidatingRuleSpec{
+			Webhooks: []v1beta1.ValidatingWebhook{{
+				Name: "resource2",
+				ClientConfig: v1beta1.WebhookClientConfig{
+					Service:  &v1beta1.ServiceReference{},
+					CABundle: nil,
+				},
+				Rules: []v1beta1.RuleWithOperations{{
+					Operations: []v1beta1.OperationType{testOp1},
+					Rule: v1beta1.Rule{
+						APIGroups:   []string{testGroup1},
+						APIVersions: []string{testVersion1},
+						Resources:   []string{testResource1},
+					},
+				}},
+			}},
+		},
+	}
+
 )
 
 func TestAdd(t *testing.T) {
@@ -196,6 +221,16 @@ func TestUpdate(t *testing.T) {
 func TestGet(t *testing.T) {
 	endpoindData := &EndpointDataType{}
 	newE := endpoindData.Add(resource2)
+	w := newE.Get(namespace, metav1.GroupVersionResource{Group: testGroup1, Version: testVersion1, Resource: testResource1}, testOp1)
+	assert.NotEmpty(t, w)
+	assert.Len(t, w, 1)
+	assert.Equal(t, w[0].ClientConfig.Service.Namespace, namespace)
+}
+
+func TestRuleNoNamespace(t *testing.T) {
+	endpoindData := &EndpointDataType{}
+	assert.Equal(t, "", resource3.Spec.Webhooks[0].ClientConfig.Service.Namespace, "resource3 doesn''t have an empty service namespace")
+	newE := endpoindData.Add(resource3)
 	w := newE.Get(namespace, metav1.GroupVersionResource{Group: testGroup1, Version: testVersion1, Resource: testResource1}, testOp1)
 	assert.NotEmpty(t, w)
 	assert.Len(t, w, 1)
