@@ -43,7 +43,15 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// verify the content type is accurate
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
-		log.Info(fmt.Sprintf("contentType=%s, expect application/json", contentType))
+		msg := fmt.Sprintf("contentType=%s, expect application/json", contentType)
+		log.Error(nil, msg)
+
+		w.WriteHeader(400)
+		_, err := w.Write([]byte(msg))
+		if err != nil {
+			log.Error(err, "http write failed")
+		}
+
 		return
 	}
 
