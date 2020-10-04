@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/klog"
 	"net/http"
 	"strings"
 	"sync"
@@ -99,7 +98,7 @@ func doWebhook(webhook namespacedvalidatingrule.WebhookConfig, wg *sync.WaitGrou
 
 	req, err := http.NewRequestWithContext(context.TODO(), "POST", url, body)
 	if err != nil {
-		klog.Errorf("doWebhook: NewRequestWithContext failed: %v", err)
+		log.Error(err, "doWebhook: NewRequestWithContext failed")
 		err = toFailure("webhook", nil, err, webhook.FailurePolicy)
 		errCh <- err
 		return
@@ -179,8 +178,8 @@ func toFailure(name string, resp *http.Response, httpErr error, failurePolicy ad
 }
 
 func errToFailure(name string, err error, failurePolicy admv1beta1.FailurePolicyType) error {
-	switch failurePolicy {
-	case admv1beta1.Fail:
+	switch strings.ToLower(string(failurePolicy)) {
+	case strings.ToLower(string(admv1beta1.Fail)):
 		log.V(1).Info(fmt.Sprintf("err = %v and FailurePolicy == Fail", err))
 		return fmt.Errorf("proxied webhook %v failed: %v", name, err)
 	default:
