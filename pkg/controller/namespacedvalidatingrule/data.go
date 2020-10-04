@@ -119,7 +119,7 @@ func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingRule) *Endpoin
 	groupMap := namespaceMap[t.Namespace]
 
 	for _, webhook := range t.Spec.Webhooks {
-		webhookConfig := createWebhookConfig(webhook)
+		webhookConfig := createWebhookConfig(webhook, t.Namespace)
 
 		for _, webhookRule := range webhook.Rules {
 			var versionMapList []typeVersionMap
@@ -171,7 +171,7 @@ func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingRule) *Endpoin
 	return newE
 }
 
-func createWebhookConfig(webhook v1beta1.ValidatingWebhook) WebhookConfig {
+func createWebhookConfig(webhook v1beta1.ValidatingWebhook, namespace string) WebhookConfig {
 	var (
 		failurePolicy v1beta1.FailurePolicyType
 		timeout int32
@@ -187,6 +187,10 @@ func createWebhookConfig(webhook v1beta1.ValidatingWebhook) WebhookConfig {
 		timeout = 30
 	} else {
 		timeout = *webhook.TimeoutSeconds
+	}
+
+	if webhook.ClientConfig.Service != nil && webhook.ClientConfig.Service.Namespace == "" {
+		webhook.ClientConfig.Service.Namespace = namespace
 	}
 
 	return WebhookConfig{
