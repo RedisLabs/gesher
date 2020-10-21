@@ -1,4 +1,10 @@
 FROM  golang:1.14-alpine as stage1
+ARG version=dev
+LABEL name="redislabs/gesher" \
+      maintainer="support@redislabs.com" \
+      vendor="Redis Labs" \
+      version="${version}" \
+      release="1"
 ENV GOPATH=/go
 WORKDIR /go/src/github.com/RedisLabs/gesher
 RUN mkdir -p /go/src/github.com/RedisLabs/gesher

@@ -1,7 +1,7 @@
 # Building gesher
 
-docker build -t quay.io/spotter/gesher:test -f Dockerfile .
-docker push quay.io/spotter/gesher:test
+VERSION=GOES_HERE ; docker build --build-arg version=$VERSION -t quay.io/spotter/gesher:$VERSION -f Dockerfile .
+docker push quay.io/spotter/gesher:$VERSION
 
 one would need to modify the tag and the integration test to use the proper image
 
