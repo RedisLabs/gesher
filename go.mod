@@ -5,8 +5,8 @@ go 1.13
 require (
 	github.com/go-logr/logr v0.1.0
 	github.com/googleapis/gnostic v0.3.1
-	github.com/onsi/ginkgo v1.12.0
-	github.com/onsi/gomega v1.9.0
+	github.com/onsi/ginkgo v1.15.0
+	github.com/onsi/gomega v1.10.5
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
