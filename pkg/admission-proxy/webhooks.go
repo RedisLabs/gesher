@@ -104,6 +104,8 @@ func doWebhook(webhook namespacedvalidatingrule.WebhookConfig, wg *sync.WaitGrou
 		return
 	}
 
+	req.Close = true
+
 	for k, v := range r.Header {
 		for _, s := range v {
 			req.Header.Add(k, s)

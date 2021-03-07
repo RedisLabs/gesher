@@ -5,19 +5,14 @@ go 1.13
 require (
 	github.com/go-logr/logr v0.1.0
 	github.com/googleapis/gnostic v0.3.1
-	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365
-	github.com/lestrrat-go/jspointer v0.0.0-20181205001929-82fadba7561c // indirect
-	github.com/lestrrat-go/jsref v0.0.0-20181205001954-1b590508f37d // indirect
-	github.com/lestrrat-go/jsschema v0.0.0-20181205002244-5c81c58ffcc3
-	github.com/lestrrat-go/jsval v0.0.0-20181205002323-20277e9befc0 // indirect
-	github.com/lestrrat-go/pdebug v0.0.0-20200204225717-4d6bd78da58d // indirect
-	github.com/lestrrat-go/structinfo v0.0.0-20190212233437-acd51874663b // indirect
-	github.com/onsi/ginkgo v1.12.0
-	github.com/onsi/gomega v1.9.0
+	github.com/onsi/ginkgo v1.15.0
+	github.com/onsi/gomega v1.10.5
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	k8s.io/api v0.18.2
 	k8s.io/apiextensions-apiserver v0.18.2
 	k8s.io/apimachinery v0.18.2
