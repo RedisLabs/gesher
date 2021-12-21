@@ -15,7 +15,7 @@ spec:
       serviceAccountName: gesher
       containers:
         - name: gesher
-          image: quay.io/spotter/gesher:test
+          image: redislabs/gesher:test
           command:
           - "/manager"
           args:

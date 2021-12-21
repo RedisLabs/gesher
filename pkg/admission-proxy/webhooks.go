@@ -30,20 +30,20 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/api/admission/v1beta1"
-	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admv1 "k8s.io/api/admission/v1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 
 	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingrule"
 )
 
-func findWebhooks(request *v1beta1.AdmissionRequest) []namespacedvalidatingrule.WebhookConfig {
-	op := admv1beta1.OperationType(request.Operation)
+func findWebhooks(request *admv1.AdmissionRequest) []namespacedvalidatingrule.WebhookConfig {
+	op := admregv1.OperationType(request.Operation)
 
 	return namespacedvalidatingrule.EndpointData.Get(request.Namespace, request.Resource, op)
 }
 
 // code is inspired by k8s.io/apiserver/pkg/admission/plugin/webhook/validating/dispatcher.go
-func checkWebhooks(webhooks []namespacedvalidatingrule.WebhookConfig, r *http.Request, body *bytes.Reader) *v1beta1.AdmissionResponse {
+func checkWebhooks(webhooks []namespacedvalidatingrule.WebhookConfig, r *http.Request, body *bytes.Reader) *admv1.AdmissionResponse {
 	if len(webhooks) == 0 {
 		return approved()
 	}
@@ -121,7 +121,7 @@ func doWebhook(webhook namespacedvalidatingrule.WebhookConfig, wg *sync.WaitGrou
 	errCh <- err
 }
 
-func serviceToUrl(service *admv1beta1.ServiceReference) string {
+func serviceToUrl(service *admregv1.ServiceReference) string {
 	if service == nil {
 		return ""
 	}
@@ -145,7 +145,7 @@ func serviceToUrl(service *admv1beta1.ServiceReference) string {
 	return sb.String()
 }
 
-func toFailure(name string, resp *http.Response, httpErr error, failurePolicy admv1beta1.FailurePolicyType) error {
+func toFailure(name string, resp *http.Response, httpErr error, failurePolicy admregv1.FailurePolicyType) error {
 	log.V(2).Info(fmt.Sprintf("toFailure: %v: httpErr = %v", name, httpErr))
 	if httpErr != nil {
 		return errToFailure(name, fmt.Errorf("http error: %v", httpErr), failurePolicy)
@@ -162,7 +162,7 @@ func toFailure(name string, resp *http.Response, httpErr error, failurePolicy ad
 
 	log.V(2).Info(fmt.Sprintf("toFailure: resp.Body = %v", string(data)))
 
-	var responseAdmissionReview v1beta1.AdmissionReview
+	var responseAdmissionReview admv1.AdmissionReview
 	err = json.Unmarshal(data, &responseAdmissionReview)
 	if err != nil {
 		return errToFailure(name, fmt.Errorf("json unmarshall failed: %v", err), failurePolicy)
@@ -179,9 +179,9 @@ func toFailure(name string, resp *http.Response, httpErr error, failurePolicy ad
 	return nil
 }
 
-func errToFailure(name string, err error, failurePolicy admv1beta1.FailurePolicyType) error {
+func errToFailure(name string, err error, failurePolicy admregv1.FailurePolicyType) error {
 	switch strings.ToLower(string(failurePolicy)) {
-	case strings.ToLower(string(admv1beta1.Fail)):
+	case strings.ToLower(string(admregv1.Fail)):
 		log.V(1).Info(fmt.Sprintf("err = %v and FailurePolicy == Fail", err))
 		return fmt.Errorf("proxied webhook %v failed: %v", name, err)
 	default:

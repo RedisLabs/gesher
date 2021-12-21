@@ -19,9 +19,10 @@ package namespacedvalidatingtype
 import (
 	"bytes"
 	"encoding/gob"
+
 	"github.com/redislabs/gesher/cmd/manager/flags"
 
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -30,7 +31,7 @@ import (
 
 var (
 	namespacedTypeData = &NamespacedTypeData{}
-	caBundle      []byte
+	caBundle           []byte
 )
 
 type typeInstanceMap map[types.UID]bool
@@ -43,7 +44,7 @@ type NamespacedTypeData struct {
 	Mapping typeGroupMap
 }
 
-func (p *NamespacedTypeData) Exist(kind *metav1.GroupVersionKind, op v1beta1.OperationType) bool {
+func (p *NamespacedTypeData) Exist(kind *metav1.GroupVersionKind, op admregv1.OperationType) bool {
 	groupList := []string{kind.Group, "*"}
 	var versionMapList []typeVersionMap
 	for _, group := range groupList {
@@ -181,8 +182,8 @@ func (p *NamespacedTypeData) Update(t *appv1alpha1.NamespacedValidatingType) *Na
 	return newP
 }
 
-func (p *NamespacedTypeData) GenerateGlobalWebhook() *v1beta1.ValidatingWebhookConfiguration {
-	webhook := &v1beta1.ValidatingWebhookConfiguration{
+func (p *NamespacedTypeData) GenerateGlobalWebhook() *admregv1.ValidatingWebhookConfiguration {
+	webhook := &admregv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{Name: ProxyWebhookName},
 	}
 
@@ -191,34 +192,34 @@ func (p *NamespacedTypeData) GenerateGlobalWebhook() *v1beta1.ValidatingWebhookC
 	return webhook
 }
 
-func (p *NamespacedTypeData) enumerateWebhooks() []v1beta1.ValidatingWebhook {
-	var rules []v1beta1.RuleWithOperations
+func (p *NamespacedTypeData) enumerateWebhooks() []admregv1.ValidatingWebhook {
+	var rules []admregv1.RuleWithOperations
 
-	scope := v1beta1.NamespacedScope
+	scope := admregv1.NamespacedScope
 
 	for group, versionMap := range p.Mapping {
 		for version, kindMap := range versionMap {
 			for kind, opMap := range kindMap {
-				var opList []v1beta1.OperationType
+				var opList []admregv1.OperationType
 				for op, instanceMap := range opMap {
 					if len(instanceMap) > 0 {
 						switch op {
-						case string(v1beta1.OperationAll):
-							opList = append(opList, v1beta1.OperationAll)
-						case string(v1beta1.Create):
-							opList = append(opList, v1beta1.Create)
-						case string(v1beta1.Update):
-							opList = append(opList, v1beta1.Update)
-						case string(v1beta1.Delete):
-							opList = append(opList, v1beta1.Delete)
-						case string(v1beta1.Connect):
-							opList = append(opList, v1beta1.Connect)
+						case string(admregv1.OperationAll):
+							opList = append(opList, admregv1.OperationAll)
+						case string(admregv1.Create):
+							opList = append(opList, admregv1.Create)
+						case string(admregv1.Update):
+							opList = append(opList, admregv1.Update)
+						case string(admregv1.Delete):
+							opList = append(opList, admregv1.Delete)
+						case string(admregv1.Connect):
+							opList = append(opList, admregv1.Connect)
 						}
 					}
 				}
 				if len(opList) > 0 {
-					rule := v1beta1.RuleWithOperations{
-						Rule: v1beta1.Rule{
+					rule := admregv1.RuleWithOperations{
+						Rule: admregv1.Rule{
 							APIGroups:   []string{group},
 							APIVersions: []string{version},
 							Resources:   []string{kind},
@@ -232,10 +233,10 @@ func (p *NamespacedTypeData) enumerateWebhooks() []v1beta1.ValidatingWebhook {
 		}
 	}
 
-	fail := v1beta1.Fail
+	fail := admregv1.Fail
 	var defaultTimeout int32 = 30
-	sideEffects := v1beta1.SideEffectClassUnknown
-	webhook := v1beta1.ValidatingWebhook{
+	sideEffects := admregv1.SideEffectClassNone
+	webhook := admregv1.ValidatingWebhook{
 		Name:                    ProxyWebhookName,
 		ClientConfig:            selfConfig(),
 		Rules:                   rules,
@@ -243,18 +244,18 @@ func (p *NamespacedTypeData) enumerateWebhooks() []v1beta1.ValidatingWebhook {
 		SideEffects:             &sideEffects,
 		NamespaceSelector:       &metav1.LabelSelector{},
 		TimeoutSeconds:          &defaultTimeout,
-		AdmissionReviewVersions: []string{"v1beta1"},
+		AdmissionReviewVersions: []string{"v1"},
 	}
 
-	return []v1beta1.ValidatingWebhook{webhook}
+	return []admregv1.ValidatingWebhook{webhook}
 }
 
 // FiXME
-func selfConfig() v1beta1.WebhookClientConfig {
+func selfConfig() admregv1.WebhookClientConfig {
 	path := "/proxy"
 
-	return v1beta1.WebhookClientConfig{
-		Service: &v1beta1.ServiceReference{
+	return admregv1.WebhookClientConfig{
+		Service: &admregv1.ServiceReference{
 			Namespace: *flags.Namespace,
 			Name:      *flags.Service,
 			Path:      &path,

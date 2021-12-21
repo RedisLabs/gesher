@@ -17,11 +17,13 @@ limitations under the License.
 package namespacedvalidatingrule
 
 import (
+	"context"
+
+	"github.com/operator-framework/operator-lib/handler"
 	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -50,7 +52,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource NamespacedValidatingRule
-	err = c.Watch(&source.Kind{Type: &appv1alpha1.NamespacedValidatingRule{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &appv1alpha1.NamespacedValidatingRule{}}, &handler.InstrumentedEnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -74,7 +76,7 @@ type ReconcileNamespacedValidatingRule struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileNamespacedValidatingRule) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileNamespacedValidatingRule) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.V(1).Info("Reconciling NamespacedValidatingRule")
 

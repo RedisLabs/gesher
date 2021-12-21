@@ -5,7 +5,7 @@
 package v1alpha1
 
 import (
-	v1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -75,7 +75,7 @@ func (in *NamespacedValidatingRuleSpec) DeepCopyInto(out *NamespacedValidatingRu
 	*out = *in
 	if in.Webhooks != nil {
 		in, out := &in.Webhooks, &out.Webhooks
-		*out = make([]v1beta1.ValidatingWebhook, len(*in))
+		*out = make([]admregv1.ValidatingWebhook, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -175,7 +175,7 @@ func (in *NamespacedValidatingTypeSpec) DeepCopyInto(out *NamespacedValidatingTy
 	*out = *in
 	if in.Types != nil {
 		in, out := &in.Types, &out.Types
-		*out = make([]v1beta1.RuleWithOperations, len(*in))
+		*out = make([]admregv1.RuleWithOperations, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
