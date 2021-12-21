@@ -18,14 +18,15 @@ package admission_tester_test
 
 import (
 	"context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/redislabs/gesher/integration-tests/common"
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -40,12 +41,12 @@ func TestAdmissionTester(t *testing.T) {
 
 var (
 	sa                 *corev1.ServiceAccount
-	role               *rbacv1beta1.Role
-	roleBinding        *rbacv1beta1.RoleBinding
-	clusterRole        *rbacv1beta1.ClusterRole
-	clusterRoleBinding *rbacv1beta1.ClusterRoleBinding
+	role               *rbacv1.Role
+	roleBinding        *rbacv1.RoleBinding
+	clusterRole        *rbacv1.ClusterRole
+	clusterRoleBinding *rbacv1.ClusterRoleBinding
 
-	webhook *v1beta1.ValidatingWebhookConfiguration
+	webhook *admregv1.ValidatingWebhookConfiguration
 	service *corev1.Service
 	secret  *corev1.Secret
 	deploy  *appsv1.Deployment
@@ -113,40 +114,43 @@ var _ = AfterSuite(func() {
 	}
 })
 
-func loadWebhook(s *corev1.Secret) *v1beta1.ValidatingWebhookConfiguration {
+func loadWebhook(s *corev1.Secret) *admregv1.ValidatingWebhookConfiguration {
 	By("Read and Load Webhook")
-	
-	path := "/admission"
-	failurePolicy := v1beta1.Fail
-	scope         := v1beta1.AllScopes
 
-	webhook := &v1beta1.ValidatingWebhookConfiguration{
+	path := "/admission"
+	failurePolicy := admregv1.Fail
+	scope := admregv1.AllScopes
+	sideEffects := admregv1.SideEffectClassNone
+
+	webhook := &admregv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       "admission-test",
+			Name: "admission-test",
 		},
-		Webhooks:   []v1beta1.ValidatingWebhook{
+		Webhooks: []admregv1.ValidatingWebhook{
 			{
-				Name:                    "test.admission.gesher",
-				ClientConfig:            v1beta1.WebhookClientConfig{
-					Service:  &v1beta1.ServiceReference{
-						Name: "admission-test",
+				Name: "test.admission.gesher",
+				ClientConfig: admregv1.WebhookClientConfig{
+					Service: &admregv1.ServiceReference{
+						Name:      "admission-test",
 						Namespace: common.Namespace,
-						Path: &path, 
+						Path:      &path,
 					},
 					CABundle: s.Data["cert"],
 				},
-				Rules:                   []v1beta1.RuleWithOperations{
+				Rules: []admregv1.RuleWithOperations{
 					{
-						Operations: []v1beta1.OperationType{v1beta1.Create},
-						Rule:       v1beta1.Rule{
+						Operations: []admregv1.OperationType{admregv1.Create},
+						Rule: admregv1.Rule{
 							APIGroups:   []string{""},
 							APIVersions: []string{"v1"},
 							Resources:   []string{"namespaces"},
-							Scope: &scope,
+							Scope:       &scope,
 						},
 					},
 				},
-				FailurePolicy: &failurePolicy,
+				FailurePolicy:           &failurePolicy,
+				SideEffects:             &sideEffects,
+				AdmissionReviewVersions: []string{"v1"},
 			},
 		},
 	}

@@ -17,10 +17,11 @@ limitations under the License.
 package namespacedvalidatingtype
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
-	"k8s.io/api/admissionregistration/v1beta1"
+	"github.com/stretchr/testify/assert"
+
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
@@ -37,17 +38,17 @@ const (
 	testGroup2   = "testGroup2"
 	testVersion2 = "testVersion2"
 	testKind2    = "testKind2"
-	testOp1      = v1beta1.Create
-	testOp2      = v1beta1.Delete
+	testOp1      = admregv1.Create
+	testOp2      = admregv1.Delete
 )
 
 var (
 	resource1 = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid1},
 		Spec: v1alpha1.NamespacedValidatingTypeSpec{
-			Types: []v1beta1.RuleWithOperations{{
-				Operations: []v1beta1.OperationType{testOp1},
-				Rule: v1beta1.Rule{
+			Types: []admregv1.RuleWithOperations{{
+				Operations: []admregv1.OperationType{testOp1},
+				Rule: admregv1.Rule{
 					APIGroups:   []string{testGroup1},
 					APIVersions: []string{testVersion1},
 					Resources:   []string{testKind1},
@@ -58,9 +59,9 @@ var (
 	resource1a = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid1},
 		Spec: v1alpha1.NamespacedValidatingTypeSpec{
-			Types: []v1beta1.RuleWithOperations{{
-				Operations: []v1beta1.OperationType{testOp2},
-				Rule: v1beta1.Rule{
+			Types: []admregv1.RuleWithOperations{{
+				Operations: []admregv1.OperationType{testOp2},
+				Rule: admregv1.Rule{
 					APIGroups:   []string{testGroup1},
 					APIVersions: []string{testVersion1},
 					Resources:   []string{testKind1},
@@ -71,9 +72,9 @@ var (
 	resource2 = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid2},
 		Spec: v1alpha1.NamespacedValidatingTypeSpec{
-			Types: []v1beta1.RuleWithOperations{{
-				Operations: []v1beta1.OperationType{testOp1},
-				Rule: v1beta1.Rule{
+			Types: []admregv1.RuleWithOperations{{
+				Operations: []admregv1.OperationType{testOp1},
+				Rule: admregv1.Rule{
 					APIGroups:   []string{testGroup1},
 					APIVersions: []string{testVersion1},
 					Resources:   []string{testKind1},
@@ -84,9 +85,9 @@ var (
 	resource2a = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid2},
 		Spec: v1alpha1.NamespacedValidatingTypeSpec{
-			Types: []v1beta1.RuleWithOperations{{
-				Operations: []v1beta1.OperationType{testOp2},
-				Rule: v1beta1.Rule{
+			Types: []admregv1.RuleWithOperations{{
+				Operations: []admregv1.OperationType{testOp2},
+				Rule: admregv1.Rule{
 					APIGroups:   []string{testGroup1},
 					APIVersions: []string{testVersion1},
 					Resources:   []string{testKind1},
@@ -97,9 +98,9 @@ var (
 	resource3 = &v1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid3},
 		Spec: v1alpha1.NamespacedValidatingTypeSpec{
-			Types: []v1beta1.RuleWithOperations{{
-				Operations: []v1beta1.OperationType{testOp1},
-				Rule: v1beta1.Rule{
+			Types: []admregv1.RuleWithOperations{{
+				Operations: []admregv1.OperationType{testOp1},
+				Rule: admregv1.Rule{
 					APIGroups:   []string{testGroup2},
 					APIVersions: []string{testVersion2},
 					Resources:   []string{testKind2},

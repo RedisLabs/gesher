@@ -21,23 +21,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/redislabs/gesher/cmd/manager/flags"
 	"io/ioutil"
-	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	"os"
+
+	"github.com/redislabs/gesher/cmd/manager/flags"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"os"
 
 	"github.com/googleapis/gnostic/compiler"
 
 	"github.com/redislabs/gesher/pkg/controller/namespacedvalidatingtype"
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -92,7 +92,7 @@ func GetClient() (client.Client, kubernetes.Interface, error) {
 		return nil, nil, err
 	}
 
-	err = apiext.AddToScheme(scheme.Scheme)
+	err = apiextv1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -109,10 +109,10 @@ func GetClient() (client.Client, kubernetes.Interface, error) {
 	return kubeClient, cl, nil
 }
 
-func LoadNamespacedValidatingTypeCRD() *apiextv1beta1.CustomResourceDefinition {
+func LoadNamespacedValidatingTypeCRD() *apiextv1.CustomResourceDefinition {
 	By("Read and Load CRD")
 
-	c := &apiextv1beta1.CustomResourceDefinition{}
+	c := &apiextv1.CustomResourceDefinition{}
 
 	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_namespacedvalidatingtype_crd.yaml")
 	Expect(err).To(BeNil())
@@ -122,10 +122,10 @@ func LoadNamespacedValidatingTypeCRD() *apiextv1beta1.CustomResourceDefinition {
 	return c
 }
 
-func LoadNamespacedValidatingRuleCRD() *apiextv1beta1.CustomResourceDefinition {
+func LoadNamespacedValidatingRuleCRD() *apiextv1.CustomResourceDefinition {
 	By("Read and Load CRD")
 
-	c := &apiextv1beta1.CustomResourceDefinition{}
+	c := &apiextv1.CustomResourceDefinition{}
 
 	data, err := ioutil.ReadFile("../../deploy/crds/app.redislabs.com_namespacedvalidatingrule_crd.yaml")
 	Expect(err).To(BeNil())
@@ -149,10 +149,10 @@ func LoadServiceAccount() *v1.ServiceAccount {
 	return sa
 }
 
-func LoadRole() *rbacv1beta1.Role {
+func LoadRole() *rbacv1.Role {
 	By("Read and Load Role")
 
-	role := &rbacv1beta1.Role{}
+	role := &rbacv1.Role{}
 
 	data, err := ioutil.ReadFile("../../deploy/role.yaml")
 	Expect(err).To(BeNil())
@@ -163,10 +163,10 @@ func LoadRole() *rbacv1beta1.Role {
 	return role
 }
 
-func LoadRoleBinding() *rbacv1beta1.RoleBinding {
+func LoadRoleBinding() *rbacv1.RoleBinding {
 	By("Read and Load RoleBinding")
 
-	roleBinding := &rbacv1beta1.RoleBinding{}
+	roleBinding := &rbacv1.RoleBinding{}
 
 	data, err := ioutil.ReadFile("../../deploy/role_binding.yaml")
 	Expect(err).To(BeNil())
@@ -177,10 +177,10 @@ func LoadRoleBinding() *rbacv1beta1.RoleBinding {
 	return roleBinding
 }
 
-func LoadClusterRole() *rbacv1beta1.ClusterRole {
+func LoadClusterRole() *rbacv1.ClusterRole {
 	By("Read and Load ClusterRole")
 
-	role := &rbacv1beta1.ClusterRole{}
+	role := &rbacv1.ClusterRole{}
 
 	data, err := ioutil.ReadFile("../../deploy/cluster_role.yaml")
 	Expect(err).To(BeNil())
@@ -190,10 +190,10 @@ func LoadClusterRole() *rbacv1beta1.ClusterRole {
 	return role
 }
 
-func LoadClusterRoleBinding() *rbacv1beta1.ClusterRoleBinding {
+func LoadClusterRoleBinding() *rbacv1.ClusterRoleBinding {
 	By("Read and Load RoleBinding")
 
-	roleBinding := &rbacv1beta1.ClusterRoleBinding{}
+	roleBinding := &rbacv1.ClusterRoleBinding{}
 
 	data, err := ioutil.ReadFile("../../deploy/cluster_role_binding.yaml")
 	Expect(err).To(BeNil())
@@ -266,7 +266,7 @@ func WaitForDeployment(deploy *appsv1.Deployment) error {
 func VerifyEmpty() error {
 	fmt.Fprintf(GinkgoWriter, "Verifying that Webhook %v is Empty: ", webhookResourceName)
 
-	item := &v1beta1.ValidatingWebhookConfiguration{}
+	item := &admregv1.ValidatingWebhookConfiguration{}
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: webhookResourceName}, item)
 	if err != nil {
 		fmt.Fprintf(GinkgoWriter, "%v\n", err)
@@ -338,7 +338,7 @@ func VerifyDeleted(t verifyDeletion) error {
 }
 
 func ValidateInWebhook(ptList []*v1alpha1.NamespacedValidatingType) error {
-	item := &v1beta1.ValidatingWebhookConfiguration{}
+	item := &admregv1.ValidatingWebhookConfiguration{}
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: webhookResourceName}, item)
 	if err != nil {
 		return err
@@ -358,7 +358,7 @@ func ValidateInWebhook(ptList []*v1alpha1.NamespacedValidatingType) error {
 }
 
 func ValidateNotInWebhook(ptList []*v1alpha1.NamespacedValidatingType) error {
-	item := &v1beta1.ValidatingWebhookConfiguration{}
+	item := &admregv1.ValidatingWebhookConfiguration{}
 	err := kubeClient.Get(context.TODO(), client.ObjectKey{Name: webhookResourceName}, item)
 	if err != nil {
 		return err
@@ -377,7 +377,7 @@ func ValidateNotInWebhook(ptList []*v1alpha1.NamespacedValidatingType) error {
 	return nil
 }
 
-func namespacedValidatingTypeExists(pt *v1alpha1.NamespacedValidatingType, rules []v1beta1.RuleWithOperations) bool {
+func namespacedValidatingTypeExists(pt *v1alpha1.NamespacedValidatingType, rules []admregv1.RuleWithOperations) bool {
 	for _, pType := range pt.Spec.Types {
 		for _, group := range pType.APIGroups {
 			for _, version := range pType.APIVersions {
@@ -404,7 +404,7 @@ func namespacedValidatingTypeExists(pt *v1alpha1.NamespacedValidatingType, rules
 	return true
 }
 
-func OpArrayContainsValues(operations []v1beta1.OperationType, op v1beta1.OperationType) bool {
+func OpArrayContainsValues(operations []admregv1.OperationType, op admregv1.OperationType) bool {
 	for _, operation := range operations {
 		if op == operation {
 			return true
@@ -576,4 +576,3 @@ func LoadTestService() *v1.Service {
 
 	return s
 }
-

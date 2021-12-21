@@ -18,9 +18,10 @@ package type_controller_test
 
 import (
 	"context"
+
 	"github.com/redislabs/gesher/integration-tests/common"
 	"github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
-	admissionv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo"
@@ -32,8 +33,8 @@ const (
 	testGroup    = "TestGroup"
 	testVersion  = "TestVersion"
 	testResource = "TestResources"
-	op1          = admissionv1beta1.Create
-	op2          = admissionv1beta1.Delete
+	op1          = admregv1.Create
+	op2          = admregv1.Delete
 )
 
 var _ = Describe("TypeController", func() {
@@ -46,9 +47,9 @@ var _ = Describe("TypeController", func() {
 				Name: namePrefix,
 			},
 			Spec: v1alpha1.NamespacedValidatingTypeSpec{
-				Types: []admissionv1beta1.RuleWithOperations{{
-					Operations: []admissionv1beta1.OperationType{op1},
-					Rule: admissionv1beta1.Rule{
+				Types: []admregv1.RuleWithOperations{{
+					Operations: []admregv1.OperationType{op1},
+					Rule: admregv1.Rule{
 						APIGroups:   []string{testGroup},
 						APIVersions: []string{testVersion},
 						Resources:   []string{testResource},

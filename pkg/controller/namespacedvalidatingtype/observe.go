@@ -19,11 +19,12 @@ package namespacedvalidatingtype
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 
 	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -31,13 +32,13 @@ import (
 
 type observedState struct {
 	customResource *appv1alpha1.NamespacedValidatingType
-	clusterWebhook *v1beta1.ValidatingWebhookConfiguration
+	clusterWebhook *admregv1.ValidatingWebhookConfiguration
 }
 
 func observe(client client.Client, request reconcile.Request, logger logr.Logger) (*observedState, error) {
 	state := &observedState{
 		customResource: &appv1alpha1.NamespacedValidatingType{},
-		clusterWebhook: &v1beta1.ValidatingWebhookConfiguration{},
+		clusterWebhook: &admregv1.ValidatingWebhookConfiguration{},
 	}
 
 	// Fetch the NamespacedValidatingType instance

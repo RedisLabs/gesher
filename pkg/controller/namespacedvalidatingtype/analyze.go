@@ -17,25 +17,26 @@ limitations under the License.
 package namespacedvalidatingtype
 
 import (
-	"github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
 	"reflect"
 
+	"github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
+
 	"github.com/go-logr/logr"
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 )
 
 type analyzedState struct {
-	customResource   *v1alpha1.NamespacedValidatingType
+	customResource        *v1alpha1.NamespacedValidatingType
 	newNamespacedTypeData *NamespacedTypeData
-	webhook          *v1beta1.ValidatingWebhookConfiguration
-	create           bool
-	update           bool
-	delete           bool
+	webhook               *admregv1.ValidatingWebhookConfiguration
+	create                bool
+	update                bool
+	delete                bool
 }
 
 func analyze(observed *observedState, logger logr.Logger) (*analyzedState, error) {
 	state := &analyzedState{
-		customResource: observed.customResource,
+		customResource:        observed.customResource,
 		newNamespacedTypeData: namespacedTypeData,
 	}
 
@@ -70,7 +71,7 @@ func analyze(observed *observedState, logger logr.Logger) (*analyzedState, error
 	return state, nil
 }
 
-func webhooksDiffer(new, old *v1beta1.ValidatingWebhookConfiguration) bool {
+func webhooksDiffer(new, old *admregv1.ValidatingWebhookConfiguration) bool {
 	if old == nil {
 		return true
 	}

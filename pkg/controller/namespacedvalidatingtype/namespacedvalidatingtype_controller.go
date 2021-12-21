@@ -17,10 +17,12 @@ limitations under the License.
 package namespacedvalidatingtype
 
 import (
-	"github.com/redislabs/gesher/pkg/common"
+	"context"
 	"io/ioutil"
-	"k8s.io/api/admissionregistration/v1beta1"
 	"path/filepath"
+
+	"github.com/redislabs/gesher/pkg/common"
+	v1 "k8s.io/api/admissionregistration/v1"
 
 	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,17 +69,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to secondary resource ValidatingWebhookConfiguration and requeue the owner NamespacedValidatingType
-	err = c.Watch(&source.Kind{Type: &v1beta1.ValidatingWebhookConfiguration{}}, &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-			if a.Meta.GetName() == ProxyWebhookName {
-				// return a "zero" NamespacedName: reconcile func knows to then recreate ValidatingWebhookConfiguration
+	err = c.Watch(&source.Kind{Type: &v1.ValidatingWebhookConfiguration{}}, handler.EnqueueRequestsFromMapFunc(
+		func(o client.Object) []reconcile.Request {
+			if o.GetName() == ProxyWebhookName {
 				return []reconcile.Request{{}}
 			}
-			// some other ValidatingWebhookConfiguration, so we ignore it
 			return nil
-		}),
-	})
+		},
+	))
 	if err != nil {
 		return err
 	}
@@ -101,7 +100,7 @@ type ReconcileNamespacedValidatingType struct {
 
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileNamespacedValidatingType) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileNamespacedValidatingType) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling NamespacedValidatingType")
 
