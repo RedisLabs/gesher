@@ -21,22 +21,23 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/redislabs/gesher/cmd/manager/flags"
-	"github.com/redislabs/gesher/pkg/common"
-	"github.com/redislabs/gesher/pkg/tls_manager"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/redislabs/gesher/cmd/manager/flags"
+	"github.com/redislabs/gesher/pkg/common"
+	"github.com/redislabs/gesher/pkg/tls_manager"
+	"k8s.io/client-go/kubernetes"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"github.com/redislabs/gesher/pkg/admission-proxy"
+	admission_proxy "github.com/redislabs/gesher/pkg/admission-proxy"
 	"github.com/redislabs/gesher/pkg/apis"
 	"github.com/redislabs/gesher/pkg/controller"
 	"github.com/redislabs/gesher/version"
@@ -46,7 +47,6 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -69,7 +69,7 @@ func printVersion() {
 	log.Info(fmt.Sprintf("Operator Version: %s", version.Version))
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+	// log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 }
 
 func main() {
