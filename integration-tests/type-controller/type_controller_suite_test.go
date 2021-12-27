@@ -18,15 +18,16 @@ package type_controller_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/redislabs/gesher/cmd/manager/flags"
 	"github.com/redislabs/gesher/integration-tests/common"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo"
@@ -39,15 +40,15 @@ func TestTypeController(t *testing.T) {
 }
 
 var (
-	crd1               *v1beta1.CustomResourceDefinition
-	crd2               *v1beta1.CustomResourceDefinition
+	crd1               *apiextv1.CustomResourceDefinition
+	crd2               *apiextv1.CustomResourceDefinition
 	deploy             *appsv1.Deployment
 	sa                 *corev1.ServiceAccount
 	service            *corev1.Service
-	role               *rbacv1beta1.Role
-	roleBinding        *rbacv1beta1.RoleBinding
-	clusterRole        *rbacv1beta1.ClusterRole
-	clusterRoleBinding *rbacv1beta1.ClusterRoleBinding
+	role               *rbacv1.Role
+	roleBinding        *rbacv1.RoleBinding
+	clusterRole        *rbacv1.ClusterRole
+	clusterRoleBinding *rbacv1.ClusterRoleBinding
 	secret             *corev1.Secret
 
 	kubeClient client.Client

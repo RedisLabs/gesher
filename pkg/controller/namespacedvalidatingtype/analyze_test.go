@@ -19,29 +19,29 @@ package namespacedvalidatingtype
 import (
 	"testing"
 
-	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
 )
 
 var (
-	logger = zap.Logger()
+	logger = zap.New()
 )
 
 const (
 	uid         = "1"
-	testOp      = v1beta1.Create
-	testDiffOp  = v1beta1.Delete
+	testOp      = admregv1.Create
+	testDiffOp  = admregv1.Delete
 	testGroup   = "testGroup"
 	testVersion = "testVersion"
 	testKind    = "testKind"
 )
 
 var (
-	rule = v1beta1.Rule{
+	rule = admregv1.Rule{
 		APIGroups:   []string{testGroup},
 		APIVersions: []string{testVersion},
 		Resources:   []string{testKind},
@@ -53,8 +53,8 @@ func TestAnalyzeSame(t *testing.T) {
 	customResource := &appv1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid},
 		Spec: appv1alpha1.NamespacedValidatingTypeSpec{
-			Types: []v1beta1.RuleWithOperations{{
-				Operations: []v1beta1.OperationType{testOp},
+			Types: []admregv1.RuleWithOperations{{
+				Operations: []admregv1.OperationType{testOp},
 				Rule:       rule,
 			}},
 		},
@@ -78,8 +78,8 @@ func TestAnalyzeDifferent(t *testing.T) {
 	customResource := &appv1alpha1.NamespacedValidatingType{
 		ObjectMeta: metav1.ObjectMeta{UID: uid},
 		Spec: appv1alpha1.NamespacedValidatingTypeSpec{
-			Types: []v1beta1.RuleWithOperations{{
-				Operations: []v1beta1.OperationType{testOp},
+			Types: []admregv1.RuleWithOperations{{
+				Operations: []admregv1.OperationType{testOp},
 				Rule:       rule,
 			}},
 		},

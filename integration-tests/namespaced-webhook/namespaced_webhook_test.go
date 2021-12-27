@@ -19,11 +19,12 @@ package namespaced_webhook_test
 import (
 	"context"
 	"fmt"
+	"time"
+
 	admissionTest "github.com/redislabs/gesher/pkg/admission-test"
-	admissionv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -34,15 +35,15 @@ import (
 
 var _ = Describe("NamespacedWebhook", func() {
 	var (
-		pod       *corev1.Pod
+		pod            *corev1.Pod
 		namespacedType *v1alpha1.NamespacedValidatingType
-		webhook   *v1alpha1.NamespacedValidatingRule
+		webhook        *v1alpha1.NamespacedValidatingRule
 	)
 
 	AfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {
-        	fmt.Fprintf(GinkgoWriter, "failure: FIXME: log collection would go here, before any teardown!")
-    	}
+			fmt.Fprintf(GinkgoWriter, "failure: FIXME: log collection would go here, before any teardown!")
+		}
 
 		if pod != nil {
 			Expect(kubeClient.Delete(context.TODO(), pod)).To(Succeed())
@@ -51,13 +52,13 @@ var _ = Describe("NamespacedWebhook", func() {
 
 		if namespacedType != nil {
 			Expect(kubeClient.Delete(context.TODO(), namespacedType)).To(Succeed())
-			Eventually(func () error { return common.VerifyDeleted(namespacedType)}, 60, 5).Should(Succeed())
+			Eventually(func() error { return common.VerifyDeleted(namespacedType) }, 60, 5).Should(Succeed())
 			namespacedType = nil
 		}
 
 		if webhook != nil {
 			Expect(kubeClient.Delete(context.TODO(), webhook)).To(Succeed())
-			Eventually(func () error { return common.VerifyDeleted(webhook)}, 60, 5).Should(Succeed())
+			Eventually(func() error { return common.VerifyDeleted(webhook) }, 60, 5).Should(Succeed())
 			webhook = nil
 		}
 
@@ -81,7 +82,7 @@ var _ = Describe("NamespacedWebhook", func() {
 
 	It("Create Pod with Namespaced Webhook, without label", func() {
 		namespacedType = createNamespacedType()
-		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
+		webhook = createNamespacedWebhook(admissionv1.Fail)
 
 		pod = getPod(false)
 		tryCreatePod(&pod, false, true)
@@ -89,7 +90,7 @@ var _ = Describe("NamespacedWebhook", func() {
 
 	It("Create Pod with Namespaced Webhook, with label", func() {
 		namespacedType = createNamespacedType()
-		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
+		webhook = createNamespacedWebhook(admissionv1.Fail)
 
 		pod = getPod(true)
 		tryCreatePod(&pod, true, true)
@@ -97,7 +98,7 @@ var _ = Describe("NamespacedWebhook", func() {
 
 	It("Create Pod after delete Namespaced Webhook, without label", func() {
 		namespacedType = createNamespacedType()
-		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
+		webhook = createNamespacedWebhook(admissionv1.Fail)
 		webhook = deleteNamespacedWebhook(webhook)
 
 		pod = getPod(false)
@@ -106,11 +107,11 @@ var _ = Describe("NamespacedWebhook", func() {
 
 	It("Test with Ignore Failure type if admission controller is removed", func() {
 		namespacedType = createNamespacedType()
-		webhook = createNamespacedWebhook(admissionv1beta1.Ignore)
+		webhook = createNamespacedWebhook(admissionv1.Ignore)
 
 		Expect(kubeClient.Delete(context.TODO(), admDeploy)).To(Succeed())
 		admDeploy = nil
-		Eventually(func () error { return common.VerifyNoEndpoint(admService.Name, admService.Namespace) }, 60, 5).Should(Succeed())
+		Eventually(func() error { return common.VerifyNoEndpoint(admService.Name, admService.Namespace) }, 60, 5).Should(Succeed())
 
 		pod = getPod(false)
 		tryCreatePod(&pod, true, false)
@@ -118,17 +119,16 @@ var _ = Describe("NamespacedWebhook", func() {
 
 	It("Test with Fail Failure type if admission controller is removed", func() {
 		namespacedType = createNamespacedType()
-		webhook = createNamespacedWebhook(admissionv1beta1.Fail)
+		webhook = createNamespacedWebhook(admissionv1.Fail)
 
 		Expect(kubeClient.Delete(context.TODO(), admDeploy)).To(Succeed())
 		admDeploy = nil
-		Eventually(func () error { return common.VerifyNoEndpoint(admService.Name, admService.Namespace) }, 60, 5).Should(Succeed())
+		Eventually(func() error { return common.VerifyNoEndpoint(admService.Name, admService.Namespace) }, 60, 5).Should(Succeed())
 
 		pod = getPod(false)
 		tryCreatePod(&pod, false, false)
 	})
 })
-
 
 func createNamespacedType() *v1alpha1.NamespacedValidatingType {
 	By("Add NamespacedValidatingType")
@@ -137,9 +137,9 @@ func createNamespacedType() *v1alpha1.NamespacedValidatingType {
 			Name: "gesher-test",
 		},
 		Spec: v1alpha1.NamespacedValidatingTypeSpec{
-			Types: []admissionv1beta1.RuleWithOperations{{
-				Operations: []admissionv1beta1.OperationType{"CREATE"},
-				Rule: admissionv1beta1.Rule{
+			Types: []admissionv1.RuleWithOperations{{
+				Operations: []admissionv1.OperationType{"CREATE"},
+				Rule: admissionv1.Rule{
 					APIGroups:   []string{""},
 					APIVersions: []string{"v1"},
 					Resources:   []string{"pods"},
@@ -158,7 +158,7 @@ func createNamespacedType() *v1alpha1.NamespacedValidatingType {
 func getPod(label bool) *corev1.Pod {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("pod-test-%v", time.Now().Unix()),
+			Name:      fmt.Sprintf("pod-test-%v", time.Now().Unix()),
 			Namespace: common.Namespace,
 		},
 		Spec: corev1.PodSpec{
@@ -206,39 +206,42 @@ func tryCreatePod(pod **corev1.Pod, success bool, available bool) {
 	}
 }
 
-func createNamespacedWebhook(failurePolicy admissionv1beta1.FailurePolicyType) *v1alpha1.NamespacedValidatingRule {
+func createNamespacedWebhook(failurePolicy admissionv1.FailurePolicyType) *v1alpha1.NamespacedValidatingRule {
 	By("Add NamespacedValidatingRule")
 	path := "/admission"
+	sideEffect := admissionv1.SideEffectClassNone
 
 	nvp := &v1alpha1.NamespacedValidatingRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-hook",
+			Name:      "test-hook",
 			Namespace: common.Namespace,
 		},
 		Spec: v1alpha1.NamespacedValidatingRuleSpec{
-			Webhooks: []admissionv1beta1.ValidatingWebhook{
+			Webhooks: []admissionv1.ValidatingWebhook{
 				{
-					Name:                    "test-hook",
-					FailurePolicy:			 &failurePolicy,
-					ClientConfig:            admissionv1beta1.WebhookClientConfig{
-						Service:  &admissionv1beta1.ServiceReference{
-							Name: admService.Name,
+					Name:          "test-hook",
+					FailurePolicy: &failurePolicy,
+					ClientConfig: admissionv1.WebhookClientConfig{
+						Service: &admissionv1.ServiceReference{
+							Name:      admService.Name,
 							Namespace: admService.Namespace,
-							Port: &admService.Spec.Ports[0].Port,
-							Path: &path,
+							Port:      &admService.Spec.Ports[0].Port,
+							Path:      &path,
 						},
 						CABundle: admSecret.Data["cert"],
 					},
-					Rules:                   []admissionv1beta1.RuleWithOperations{
+					Rules: []admissionv1.RuleWithOperations{
 						{
-							Operations: []admissionv1beta1.OperationType{admissionv1beta1.Create},
-							Rule:       admissionv1beta1.Rule{
+							Operations: []admissionv1.OperationType{admissionv1.Create},
+							Rule: admissionv1.Rule{
 								APIGroups:   []string{""},
 								APIVersions: []string{"v1"},
 								Resources:   []string{"pods"},
 							},
 						},
 					},
+					SideEffects:             &sideEffect,
+					AdmissionReviewVersions: []string{"v1"},
 				},
 			},
 		},
@@ -246,7 +249,7 @@ func createNamespacedWebhook(failurePolicy admissionv1beta1.FailurePolicyType) *
 
 	Expect(kubeClient.Create(context.TODO(), nvp)).To(Succeed())
 
-	By( "wait on resource to be applied")
+	By("wait on resource to be applied")
 	Eventually(func() error { return common.VerifyApplied(nvp) }, 60, 5).Should(Succeed())
 
 	return nvp

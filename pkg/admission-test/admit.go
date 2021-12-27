@@ -19,10 +19,11 @@ package admission_test
 import (
 	"encoding/json"
 	"fmt"
-	"k8s.io/klog"
 	"net/http"
 
-	"k8s.io/api/admission/v1beta1"
+	"k8s.io/klog"
+
+	admv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -45,7 +46,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 	Serve(w, r, admit)
 }
 
-func admit(review v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
+func admit(review admv1.AdmissionReview) *admv1.AdmissionResponse {
 	klog.Infof("admit: enter")
 	switch review.Request.Kind.Kind {
 	default: // this handles everything

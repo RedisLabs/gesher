@@ -3,7 +3,7 @@
 This is an example of a Kubernetes Validating Webhook Configuration resource
 
 ```
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: redb-admission

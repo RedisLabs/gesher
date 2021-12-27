@@ -20,12 +20,11 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	appv1alpha1 "github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
-
 )
 
 var (
@@ -35,13 +34,13 @@ var (
 )
 
 type WebhookConfig struct {
-	ClientConfig  v1beta1.WebhookClientConfig
-	FailurePolicy v1beta1.FailurePolicyType
+	ClientConfig  admregv1.WebhookClientConfig
+	FailurePolicy admregv1.FailurePolicyType
 	TimeoutSecs   int32
 }
 
 type typeInstanceMap map[types.UID]WebhookConfig
-type typeOpMap map[v1beta1.OperationType]typeInstanceMap
+type typeOpMap map[admregv1.OperationType]typeInstanceMap
 type typeResourceMap map[string]typeOpMap
 type typeVersionMap map[string]typeResourceMap
 type typeGroupMap map[string]typeVersionMap
@@ -51,7 +50,7 @@ type EndpointDataType struct {
 	Mapping typeNamespaceMap
 }
 
-func (p *EndpointDataType) Get(namespace string, resource metav1.GroupVersionResource, op v1beta1.OperationType) []WebhookConfig {
+func (p *EndpointDataType) Get(namespace string, resource metav1.GroupVersionResource, op admregv1.OperationType) []WebhookConfig {
 	var ret []WebhookConfig
 
 	if groupMap, ok := p.Mapping[namespace]; ok {
@@ -84,7 +83,7 @@ func (p *EndpointDataType) Get(namespace string, resource metav1.GroupVersionRes
 			}
 		}
 
-		opList := []v1beta1.OperationType{op, v1beta1.OperationAll}
+		opList := []admregv1.OperationType{op, admregv1.OperationAll}
 		var instanceMapList []typeInstanceMap
 		for _, opMap := range opMapList {
 			for _, op := range opList {
@@ -171,14 +170,14 @@ func (p *EndpointDataType) Add(t *appv1alpha1.NamespacedValidatingRule) *Endpoin
 	return newE
 }
 
-func createWebhookConfig(webhook v1beta1.ValidatingWebhook, namespace string) WebhookConfig {
+func createWebhookConfig(webhook admregv1.ValidatingWebhook, namespace string) WebhookConfig {
 	var (
-		failurePolicy v1beta1.FailurePolicyType
-		timeout int32
+		failurePolicy admregv1.FailurePolicyType
+		timeout       int32
 	)
 
 	if webhook.FailurePolicy == nil {
-		failurePolicy = v1beta1.Fail
+		failurePolicy = admregv1.Fail
 	} else {
 		failurePolicy = *webhook.FailurePolicy
 	}

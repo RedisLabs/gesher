@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	admissionv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +30,7 @@ type NamespacedValidatingTypeSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	Types []admissionv1beta1.RuleWithOperations `json:"types,omitempty" protobuf:"bytes,3,rep,name=types"`
+	Types []admissionv1.RuleWithOperations `json:"types,omitempty" protobuf:"bytes,3,rep,name=types"`
 }
 
 // NamespacedValidatingTypeStatus defines the observed state of NamespacedValidatingType

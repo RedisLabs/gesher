@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"k8s.io/api/admissionregistration/v1beta1"
+	admregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redislabs/gesher/pkg/apis/app/v1alpha1"
@@ -36,8 +36,8 @@ const (
 	testGroup1    = "testGroup1"
 	testVersion1  = "testVersion1"
 	testResource1 = "testResource1"
-	testOp1       = v1beta1.Create
-	testOp2       = v1beta1.Delete
+	testOp1       = admregv1.Create
+	testOp2       = admregv1.Delete
 )
 
 var (
@@ -47,12 +47,12 @@ var (
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.NamespacedValidatingRuleSpec{
-			Webhooks: []v1beta1.ValidatingWebhook{{
+			Webhooks: []admregv1.ValidatingWebhook{{
 				Name:         "resource1",
-				ClientConfig: v1beta1.WebhookClientConfig{},
-				Rules: []v1beta1.RuleWithOperations{{
-					Operations: []v1beta1.OperationType{testOp1},
-					Rule: v1beta1.Rule{
+				ClientConfig: admregv1.WebhookClientConfig{},
+				Rules: []admregv1.RuleWithOperations{{
+					Operations: []admregv1.OperationType{testOp1},
+					Rule: admregv1.Rule{
 						APIGroups:   []string{testGroup1},
 						APIVersions: []string{testVersion1},
 						Resources:   []string{testResource1},
@@ -68,12 +68,12 @@ var (
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.NamespacedValidatingRuleSpec{
-			Webhooks: []v1beta1.ValidatingWebhook{{
+			Webhooks: []admregv1.ValidatingWebhook{{
 				Name:         "resource1",
-				ClientConfig: v1beta1.WebhookClientConfig{},
-				Rules: []v1beta1.RuleWithOperations{{
-					Operations: []v1beta1.OperationType{testOp2},
-					Rule: v1beta1.Rule{
+				ClientConfig: admregv1.WebhookClientConfig{},
+				Rules: []admregv1.RuleWithOperations{{
+					Operations: []admregv1.OperationType{testOp2},
+					Rule: admregv1.Rule{
 						APIGroups:   []string{testGroup1},
 						APIVersions: []string{testVersion1},
 						Resources:   []string{testResource1},
@@ -89,15 +89,15 @@ var (
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.NamespacedValidatingRuleSpec{
-			Webhooks: []v1beta1.ValidatingWebhook{{
+			Webhooks: []admregv1.ValidatingWebhook{{
 				Name: "resource2",
-				ClientConfig: v1beta1.WebhookClientConfig{
-					Service:  &v1beta1.ServiceReference{Namespace: namespace},
+				ClientConfig: admregv1.WebhookClientConfig{
+					Service:  &admregv1.ServiceReference{Namespace: namespace},
 					CABundle: nil,
 				},
-				Rules: []v1beta1.RuleWithOperations{{
-					Operations: []v1beta1.OperationType{testOp1},
-					Rule: v1beta1.Rule{
+				Rules: []admregv1.RuleWithOperations{{
+					Operations: []admregv1.OperationType{testOp1},
+					Rule: admregv1.Rule{
 						APIGroups:   []string{testGroup1},
 						APIVersions: []string{testVersion1},
 						Resources:   []string{testResource1},
@@ -113,15 +113,15 @@ var (
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.NamespacedValidatingRuleSpec{
-			Webhooks: []v1beta1.ValidatingWebhook{{
+			Webhooks: []admregv1.ValidatingWebhook{{
 				Name: "resource2",
-				ClientConfig: v1beta1.WebhookClientConfig{
-					Service:  &v1beta1.ServiceReference{},
+				ClientConfig: admregv1.WebhookClientConfig{
+					Service:  &admregv1.ServiceReference{},
 					CABundle: nil,
 				},
-				Rules: []v1beta1.RuleWithOperations{{
-					Operations: []v1beta1.OperationType{testOp1},
-					Rule: v1beta1.Rule{
+				Rules: []admregv1.RuleWithOperations{{
+					Operations: []admregv1.OperationType{testOp1},
+					Rule: admregv1.Rule{
 						APIGroups:   []string{testGroup1},
 						APIVersions: []string{testVersion1},
 						Resources:   []string{testResource1},
@@ -130,7 +130,6 @@ var (
 			}},
 		},
 	}
-
 )
 
 func TestAdd(t *testing.T) {

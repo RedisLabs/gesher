@@ -20,15 +20,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/api/admission/v1beta1"
+	"net/http"
+
+	admv1 "k8s.io/api/admission/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
-	"net/http"
 )
 
 // admitFunc is the type we use for all of our validators and mutators
-type admitFunc func(v1beta1.AdmissionReview) *v1beta1.AdmissionResponse
+type admitFunc func(admv1.AdmissionReview) *admv1.AdmissionResponse
 
 // Serve handles the http portion of a request prior to handing to an admit
 // function
@@ -50,10 +51,10 @@ func Serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 	klog.V(3).Info(fmt.Sprintf("handling request: %s", body))
 
 	// The AdmissionReview that was sent to the webhook
-	requestedAdmissionReview := v1beta1.AdmissionReview{}
+	requestedAdmissionReview := admv1.AdmissionReview{}
 
 	// The AdmissionReview that will be returned
-	responseAdmissionReview := v1beta1.AdmissionReview{}
+	responseAdmissionReview := admv1.AdmissionReview{}
 
 	deserializer := apiserver.Codecs.UniversalDeserializer()
 	name := "DecoderError"
@@ -86,16 +87,16 @@ func Serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 }
 
 // toAdmissionResponse is a helper function to create an AdmissionResponse with an embedded error
-func toAdmissionResponse(err error) *v1beta1.AdmissionResponse {
-	return &v1beta1.AdmissionResponse{
+func toAdmissionResponse(err error) *admv1.AdmissionResponse {
+	return &admv1.AdmissionResponse{
 		Result: &metav1.Status{
 			Message: err.Error(),
 		},
 	}
 }
 
-func UnknownKindError(kind metav1.GroupVersionKind) *v1beta1.AdmissionResponse {
-	return &v1beta1.AdmissionResponse{
+func UnknownKindError(kind metav1.GroupVersionKind) *admv1.AdmissionResponse {
+	return &admv1.AdmissionResponse{
 		Allowed: false,
 		Result: &metav1.Status{
 			Status:  "Failure",
@@ -104,8 +105,8 @@ func UnknownKindError(kind metav1.GroupVersionKind) *v1beta1.AdmissionResponse {
 	}
 }
 
-func UnmarsallError(raw []byte, t string, err error) *v1beta1.AdmissionResponse {
-	return &v1beta1.AdmissionResponse{
+func UnmarsallError(raw []byte, t string, err error) *admv1.AdmissionResponse {
+	return &admv1.AdmissionResponse{
 		Allowed: false,
 		Result: &metav1.Status{
 			Status:  "Failure",
@@ -114,8 +115,8 @@ func UnmarsallError(raw []byte, t string, err error) *v1beta1.AdmissionResponse 
 	}
 }
 
-func GenericError(err error) *v1beta1.AdmissionResponse {
-	return &v1beta1.AdmissionResponse{
+func GenericError(err error) *admv1.AdmissionResponse {
+	return &admv1.AdmissionResponse{
 		Allowed: false,
 		Result: &metav1.Status{
 			Status:  "Failure",
@@ -124,8 +125,8 @@ func GenericError(err error) *v1beta1.AdmissionResponse {
 	}
 }
 
-func Approved() *v1beta1.AdmissionResponse {
-	return &v1beta1.AdmissionResponse{
+func Approved() *admv1.AdmissionResponse {
+	return &admv1.AdmissionResponse{
 		Allowed: true,
 	}
 }
