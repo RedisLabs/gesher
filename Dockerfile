@@ -1,4 +1,4 @@
-FROM  golang:1.14-alpine as stage1
+FROM  golang:1.16-alpine as stage1
 ARG version=dev
 LABEL name="redislabs/gesher" \
       maintainer="support@redislabs.com" \

@@ -509,7 +509,7 @@ func LoadAdmissionDeploy() *appsv1.Deployment {
 					Containers: []v1.Container{
 						{
 							Name:    "admission-test",
-							Image:   "quay.io/spotter/gesher-admisison-test:test",
+							Image:   "docker.io/heinrichredislabs/gesher-admisison-test:test",
 							Command: []string{"/admission"},
 							Env: []v1.EnvVar{
 								{
